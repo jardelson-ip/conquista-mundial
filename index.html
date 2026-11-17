@@ -100,6 +100,14 @@ input{font:inherit}
 .tp-box span{display:block;font-size:17px;font-weight:700;margin-top:6px}
 .tp-box small{display:block;font-size:13px;font-weight:600;margin-top:6px;opacity:.8}
 @keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.06)}100%{transform:scale(1);opacity:1}}
+.msgs{display:flex;flex-direction:column;gap:6px;max-height:42vh;min-height:120px;overflow-y:auto;padding:4px 2px;-webkit-user-select:text;user-select:text}
+.msg{max-width:82%;padding:8px 11px;border-radius:14px;background:var(--panel2);font-size:14px;align-self:flex-start;line-height:1.35;word-wrap:break-word}
+.msg.me{align-self:flex-end;background:#2b2410;border:1px solid #5c4708}
+.msg small{display:block;color:var(--mut);font-size:11px;margin-bottom:2px}
+.quick{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.quick::-webkit-scrollbar{display:none}
+.quick button{flex:none;padding:7px 11px;border-radius:999px;background:var(--panel2);font-size:13px;border:1px solid var(--line)}
+.badge{display:inline-block;min-width:17px;padding:1px 5px;border-radius:999px;background:#dc2626;color:#fff;font-size:11px;font-weight:700;margin-left:3px;vertical-align:top}
 #toast{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);background:#020617;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:50;display:none;max-width:90vw;text-align:center;border:1px solid var(--line)}
 #toast.on{display:block}
 .obj{font-size:16px;line-height:1.45;padding:14px;border-radius:12px;background:#2b2410;border:1px solid #5c4708}
@@ -132,6 +140,8 @@ input{font:inherit}
     <div class="code" id="lCode">----</div>
     <button class="btn" id="bShare">Copiar convite</button>
     <div class="card">
+      <div class="lbl">Modo de jogo</div>
+      <div class="row" id="lMode"><button class="btn" data-m="solo">Individual</button><button class="btn" data-m="duo">Dupla x Dupla</button></div>
       <div class="lbl">Jogadores (<span id="lCount">0</span>/4)</div>
       <div class="plist" id="lPlayers"></div>
     </div>
@@ -168,6 +178,7 @@ input{font:inherit}
       <button class="btn" id="bObj">🎯</button>
       <button class="btn" id="bConts">🌍</button>
       <button class="btn" id="bLog">📜</button>
+      <button class="btn" id="bChat" style="display:none">💬<span id="nChat"></span></button>
       <button class="btn pri" id="bNext">Próxima fase</button>
     </div>
   </div>
@@ -181,7 +192,7 @@ input{font:inherit}
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getDatabase, ref, set, get, update, onValue, runTransaction, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getDatabase, ref, set, get, update, onValue, runTransaction, onDisconnect, push, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 /* ================= CONFIG ================= */
 const firebaseConfig = {
@@ -223,7 +234,9 @@ const COLORS = [
   {n:"Azul",     f:"#5B8DEF", d:"#1E4FBF"},
   {n:"Vermelho", f:"#EF6B6B", d:"#B42323"},
   {n:"Verde",    f:"#4CC27A", d:"#157A3E"},
-  {n:"Roxo",     f:"#A07CF0", d:"#5B33B8"}
+  {n:"Roxo",     f:"#A07CF0", d:"#5B33B8"},
+  {n:"Ciano",    f:"#3EC1D3", d:"#0E7490"},
+  {n:"Laranja",  f:"#F59E4B", d:"#B45309"}
 ];
 const SYM = ["▲","■","●","★"];
 
@@ -240,12 +253,19 @@ const OBJ = {
   k0:{t:"Eliminar o jogador AZUL. Se outro jogador eliminá-lo antes, seu objetivo passa a ser conquistar 24 territórios.", k:0},
   k1:{t:"Eliminar o jogador VERMELHO. Se outro jogador eliminá-lo antes, seu objetivo passa a ser conquistar 24 territórios.", k:1},
   k2:{t:"Eliminar o jogador VERDE. Se outro jogador eliminá-lo antes, seu objetivo passa a ser conquistar 24 territórios.", k:2},
+  d1:{t:"Conquistar, junto com seu parceiro, a Ásia e a América do Sul.", c:["asi","as"], team:1},
+  d2:{t:"Conquistar, junto com seu parceiro, a América do Norte, a Europa e a Oceania.", c:["an","eu","oc"], team:1},
+  d3:{t:"Conquistar, junto com seu parceiro, a Ásia e a África.", c:["asi","af"], team:1},
+  d4:{t:"Conquistar, junto com seu parceiro, a Europa, a África e a América do Sul.", c:["eu","af","as"], team:1},
+  d5:{t:"Conquistar, junto com seu parceiro, 30 territórios.", n:30, m:1, team:1},
+  d6:{t:"Conquistar, junto com seu parceiro, 26 territórios com pelo menos 2 tropas em cada.", n:26, m:2, team:1},
+  d7:{t:"Eliminar os dois jogadores da dupla adversária.", kill:1, team:1},
   k3:{t:"Eliminar o jogador ROXO. Se outro jogador eliminá-lo antes, seu objetivo passa a ser conquistar 24 territórios.", k:3}
 };
 
 // com 2 jogadores cada um já começa com 22 territórios, então as metas sobem
 const goalN = (g, k) => { const two = g.order.length === 2; return k === "t24" ? (two ? 32 : 24) : (two ? 28 : 18); };
-const objText = (g, u) => { const k = g.obj[u]; const o = OBJ[k]; if (!o) return ""; let t = o.t.replace("{n}", o.n ? goalN(g, k) : ""); if (o.k !== undefined) t = t.replace("24", goalN(g, "t24")); return t; };
+const objText = (g, u) => { const k = g.obj[u]; const o = OBJ[k]; if (!o) return ""; if (o.team) return o.t; let t = o.t.replace("{n}", o.n ? goalN(g, k) : ""); if (o.k !== undefined) t = t.replace("24", goalN(g, "t24")); return t; };
 /* ================= FIREBASE ================= */
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -269,11 +289,16 @@ function norm(g) {
   g.order = arr(g.order); g.log = arr(g.log); g.deck = arr(g.deck); g.discard = arr(g.discard);
   g.cards = g.cards || {}; g.order.forEach(u => g.cards[u] = arr(g.cards[u]));
   g.passive = g.passive || {}; g.elim = g.elim || {}; g.movable = g.movable || {}; g.obj = g.obj || {};
-  g.trades = g.trades || 0;
+  g.trades = g.trades || 0; g.team = g.team || {};
   return g;
 }
 const cur = g => g.order[g.turnIdx];
 const owned = (g,u) => TIDS.filter(t => g.owner[t] === u);
+const isDuo = g => g.mode === "duo";
+const mates = (g, u) => isDuo(g) ? g.order.filter(x => g.team[x] === g.team[u]) : [u];
+const isAlly = (g, a, b) => !!(isDuo(g) && a && b && a !== b && g.team[a] === g.team[b]);
+const teamName = (g, u) => "Dupla " + (g.team[u] === 0 ? "A" : "B");
+function holds(g, c, u) { const m = mates(g, u); return TIDS.filter(t => TI[t].c === c).every(t => m.includes(g.owner[t])); }
 function contOwner(g, c) { const ts = TIDS.filter(t => TI[t].c === c); const o = g.owner[ts[0]]; return ts.every(t => g.owner[t] === o) ? o : null; }
 function logp(g, s) { g.log.push(s); if (g.log.length > 40) g.log = g.log.slice(-40); }
 function tradeValue(n) { const v = [4,6,8,10,12,15]; return n <= v.length ? v[n-1] : 15 + 5 * (n - v.length); }
@@ -283,26 +308,28 @@ function calcReinf(g, u) {
   const n = owned(g,u).length;
   let r = Math.max(3, Math.floor(n / 2));
   const bonus = [];
-  Object.keys(CONT).forEach(c => { if (contOwner(g,c) === u) { r += CONT[c].b; bonus.push(CONT[c].n); } });
+  Object.keys(CONT).forEach(c => { if (holds(g,c,u)) { r += CONT[c].b; bonus.push(CONT[c].n); } });
   let pen = false;
   if ((g.passive[u] || 0) >= PASSIVE_LIMIT) { r = Math.max(1, r - 1); pen = true; }
   return {r, bonus, pen};
 }
 function objDone(g, u) {
   const o = OBJ[g.obj[u]]; if (!o) return false;
-  const mine = owned(g,u);
+  const m = mates(g, u);
+  const mine = TIDS.filter(t => m.includes(g.owner[t]));
   if (mine.length === TIDS.length) return true;
+  if (o.kill) return g.order.filter(x => !m.includes(x)).every(x => g.elim[x]);
   if (o.c) {
-    if (!o.c.every(c => contOwner(g,c) === u)) return false;
-    if (o.x) return Object.keys(CONT).some(c => !o.c.includes(c) && contOwner(g,c) === u);
+    if (!o.c.every(c => holds(g,c,u))) return false;
+    if (o.x) return Object.keys(CONT).some(c => !o.c.includes(c) && holds(g,c,u));
     return true;
   }
-  if (o.n) return mine.filter(t => g.troops[t] >= o.m).length >= goalN(g, g.obj[u]);
+  if (o.n) return mine.filter(t => g.troops[t] >= o.m).length >= (o.team ? o.n : goalN(g, g.obj[u]));
   return false; // objetivos de eliminação são checados na eliminação
 }
 function winCheck(g, u) {
   if (g.winner || g.elim[u]) return;
-  if (objDone(g, u)) { g.winner = u; g.conq = null; logp(g, `🏆 ${g.names[u]} completou o objetivo e venceu!`); }
+  if (objDone(g, u)) { g.winner = u; g.conq = null; logp(g, isDuo(g) ? `🏆 ${teamName(g,u)} (${mates(g,u).map(x => g.names[x]).join(" e ")}) completou o objetivo e venceu!` : `🏆 ${g.names[u]} completou o objetivo e venceu!`); }
 }
 function startTurn(g) {
   const u = cur(g);
@@ -343,6 +370,7 @@ function eliminate(g, victim, killer) {
   g.cards[killer] = g.cards[killer].concat(g.cards[victim]); g.cards[victim] = [];
   const vc = g.col[victim];
   logp(g, `💀 ${g.names[victim]} foi eliminado por ${g.names[killer]}`);
+  if (isDuo(g)) return;
   const ko = OBJ[g.obj[killer]];
   if (ko && ko.k === vc) { g.winner = killer; return; }
   g.order.forEach(p => { const o = OBJ[g.obj[p]]; if (p !== killer && o && o.k === vc) g.obj[p] = "t24"; });
@@ -412,6 +440,7 @@ function aAttack(from, to, blitz) {
     if (g.phase !== "attack") return fail("Não é fase de ataque.");
     if (g.owner[from] !== uid) return fail("Origem não é sua.");
     if (g.owner[to] === uid) return fail("Esse território já é seu.");
+    if (isAlly(g, uid, g.owner[to])) return fail("Esse território é do seu parceiro.");
     if (!adj(from, to)) return fail("Territórios não são vizinhos.");
     if (g.troops[from] < 2) return fail("Precisa de pelo menos 2 tropas para atacar.");
     g.conq = null;
@@ -454,11 +483,12 @@ function aMove(from, to, n) {
   return act((g, fail) => {
     if (myTurnCheck(g, fail) === false) return false;
     if (g.phase !== "move") return fail("Não é fase de remanejamento.");
-    if (g.owner[from] !== uid || g.owner[to] !== uid) return fail("Os dois territórios precisam ser seus.");
+    if (g.owner[from] !== uid || !(g.owner[to] === uid || isAlly(g, uid, g.owner[to]))) return fail("Só dá para mover para territórios seus ou do seu parceiro.");
     if (!adj(from, to)) return fail("Territórios não são vizinhos.");
     const m = Math.min(g.movable[from] || 0, g.troops[from] - 1);
     if (n < 1 || n > m) return fail("Quantidade inválida.");
     g.troops[from] -= n; g.troops[to] += n; g.movable[from] = (g.movable[from] || 0) - n;
+    if (g.owner[to] !== uid) logp(g, `🤝 ${g.names[uid]} mandou ${n} tropa(s) para ${g.names[g.owner[to]]} em ${TI[to].n}`);
     winCheck(g, uid);
   });
 }
@@ -513,9 +543,9 @@ async function joinRoom(code) {
   if (code.length !== 4) return toast("O código tem 4 letras.");
   const name = savedName(); if (!name) return toast("Digite seu apelido.");
   localStorage.setItem("cm_name", name);
-  const s = await get(ref(db, `rooms/${code}`));
-  if (!s.exists()) return toast("Sala não encontrada.");
-  const room = s.val(); const players = room.players || {};
+  const [ms, pss] = await Promise.all([get(ref(db, `rooms/${code}/meta`)), get(ref(db, `rooms/${code}/players`))]);
+  if (!ms.exists()) return toast("Sala não encontrada.");
+  const room = {meta: ms.val(), players: pss.val() || {}}; const players = room.players;
   if (players[uid]) { await update(ref(db, `rooms/${code}/players/${uid}`), {name: room.meta.status === "lobby" ? name : players[uid].name}); return enterRoom(code); }
   if (room.meta.status !== "lobby") return toast("Essa partida já começou.");
   let ok = false, why = "";
@@ -538,15 +568,18 @@ function enterRoom(code) {
   unsubConn = onValue(ref(db, ".info/connected"), s => {
     if (s.val() === true) { onDisconnect(onRef).set(false).then(() => set(onRef, true)); }
   });
-  firstSnap = true;
-  unsubRoom = onValue(ref(db, `rooms/${code}`), s => {
-    R = s.val();
-    if (!R || !R.players || !R.players[uid]) { toast("Você não está nesta sala."); leaveRoom(); return; }
-    if (R.game) norm(R.game);
-    render();
-  });
+  firstSnap = true; R = {}; const got = {};
+  // a sala é lida em partes (meta, jogadores, jogo) para o chat de cada dupla poder ser privado
+  unsubRoom = ["meta", "players", "game"].map(k => onValue(ref(db, `rooms/${code}/${k}`), s => {
+    if (!R) return;
+    R[k] = s.val(); got[k] = true;
+    if (k === "game" && R.game) norm(R.game);
+    if (!got.meta || !got.players || !got.game) return;
+    if (!R.meta || !R.players || !R.players[uid]) { toast("Você não está nesta sala."); leaveRoom(); return; }
+    syncChat(); render();
+  }));
 }
-function leaveListeners() { if (unsubRoom) unsubRoom(); if (unsubConn) unsubConn(); unsubRoom = unsubConn = null; }
+function leaveListeners() { if (unsubRoom) unsubRoom.forEach(f => f()); if (unsubConn) unsubConn(); unsubRoom = unsubConn = null; stopChat(); }
 async function leaveRoom() {
   const code = roomCode;
   if (code && R && R.meta && R.meta.status === "lobby" && R.players && R.players[uid]) {
@@ -560,27 +593,44 @@ async function leaveRoom() {
   closeModal(); show("home");
 }
 let starting = false;
-async function startGame() {
-  const ps = R.players; const uids = Object.keys(ps);
-  if (uids.length < 2) return toast("Precisa de pelo menos 2 jogadores.");
-  if (R.game || starting) return; starting = true; setTimeout(() => starting = false, 4000);
-  const order = shuffle(uids);
-  const g = { order, turnIdx:0, round:1, owner:{}, troops:{}, names:{}, col:{}, obj:{}, cards:{}, passive:{}, elim:{}, log:[], deck:[], discard:[], trades:0, winner:null };
+function buildGame(ps, mode) {
+  const uids = Object.keys(ps);
+  const duo = mode === "duo" && uids.length === 4;
+  const g = { mode: duo ? "duo" : "solo", order:[], team:{}, turnIdx:0, round:1, owner:{}, troops:{}, names:{}, col:{}, obj:{}, cards:{}, passive:{}, elim:{}, log:[], deck:[], discard:[], trades:0, winner:null };
   uids.forEach(u => { g.names[u] = ps[u].name; g.col[u] = ps[u].color; g.cards[u] = []; g.passive[u] = 0; });
-  shuffle(TIDS).forEach((t, i) => { g.owner[t] = order[i % order.length]; g.troops[t] = 1; });
-  const colorsInGame = uids.map(u => ps[u].color);
-  const pool = shuffle(Object.keys(OBJ)); const usedObj = new Set();
-  order.forEach(u => {
-    const k = pool.find(k => !usedObj.has(k) && (OBJ[k].k === undefined || (OBJ[k].k !== ps[u].color && colorsInGame.includes(OBJ[k].k))));
-    g.obj[u] = k; usedObj.add(k);
-  });
+  if (duo) {
+    const sh = shuffle(uids); const A = [sh[0], sh[1]], B = [sh[2], sh[3]];
+    g.order = [A[0], B[0], A[1], B[1]];
+    A.forEach(u => g.team[u] = 0); B.forEach(u => g.team[u] = 1);
+    g.col[A[0]] = 0; g.col[A[1]] = 4; g.col[B[0]] = 1; g.col[B[1]] = 5;   // dupla A: azul/ciano · dupla B: vermelho/laranja
+    const [ka, kb] = shuffle(Object.keys(OBJ).filter(k => OBJ[k].team));
+    A.forEach(u => g.obj[u] = ka); B.forEach(u => g.obj[u] = kb);
+  } else {
+    g.order = shuffle(uids);
+    const colorsInGame = uids.map(u => ps[u].color);
+    const pool = shuffle(Object.keys(OBJ).filter(k => !OBJ[k].team)); const usedObj = new Set();
+    g.order.forEach(u => {
+      const k = pool.find(k => !usedObj.has(k) && (OBJ[k].k === undefined || (OBJ[k].k !== ps[u].color && colorsInGame.includes(OBJ[k].k))));
+      g.obj[u] = k; usedObj.add(k);
+    });
+  }
+  shuffle(TIDS).forEach((t, i) => { g.owner[t] = g.order[i % g.order.length]; g.troops[t] = 1; });
   g.deck = shuffle(TIDS.map((t, i) => ({t, s:i % 3})).concat([{t:"*", s:3}, {t:"*", s:3}]));
   norm(g);
-  logp(g, "🌍 A partida começou! Ordem: " + order.map(u => g.names[u]).join(" → "));
+  if (duo) logp(g, `👥 Dupla A: ${g.names[g.order[0]]} e ${g.names[g.order[2]]} · Dupla B: ${g.names[g.order[1]]} e ${g.names[g.order[3]]}`);
+  logp(g, "🌍 A partida começou! Ordem: " + g.order.map(u => g.names[u]).join(" → "));
   startTurn(g);
   g.started = false; g.ready = {}; g.readyBy = now() + 90000;
   logp(g, "🎯 Cada jogador confirma o seu objetivo secreto para começar (1ª rodada sem ataques)");
-  await update(ref(db, `rooms/${roomCode}`), {"meta/status":"playing", game:g});
+  return g;
+}
+async function startGame() {
+  const ps = R.players; const uids = Object.keys(ps);
+  if (uids.length < 2) return toast("Precisa de pelo menos 2 jogadores.");
+  if (R.meta.mode === "duo" && uids.length !== 4) return toast("O modo Dupla x Dupla precisa de exatamente 4 jogadores.");
+  if (R.game || starting) return; starting = true; setTimeout(() => starting = false, 4000);
+  const g = buildGame(ps, R.meta.mode);
+  await update(ref(db, `rooms/${roomCode}`), {"meta/status":"playing", game:g, chat:null});
 }
 
 /* ================= MAPA ================= */
@@ -772,13 +822,13 @@ function paint() {
 let sel = null;
 function candidates() {
   const g = R && R.game; if (!g || !sel || cur(g) !== uid) return [];
-  if (g.phase === "attack") return ADJ[sel].filter(t => g.owner[t] !== uid);
-  if (g.phase === "move") return ADJ[sel].filter(t => g.owner[t] === uid);
+  if (g.phase === "attack") return ADJ[sel].filter(t => g.owner[t] !== uid && !isAlly(g, uid, g.owner[t]));
+  if (g.phase === "move") return ADJ[sel].filter(t => g.owner[t] === uid || isAlly(g, uid, g.owner[t]));
   return [];
 }
 function terrInfo(t) {
   const g = R.game; const o = g.owner[t];
-  toast(`${TI[t].n} · ${CONT[TI[t].c].n} · ${g.names[o]} · ${g.troops[t]} soldado(s)`);
+  toast(`${TI[t].n} · ${CONT[TI[t].c].n} · ${g.names[o]}${isAlly(g, uid, o) ? " (seu parceiro)" : ""} · ${g.troops[t]} soldado(s)`);
 }
 function onTerr(t) {
   const g = R && R.game; if (!g) return;
@@ -792,22 +842,23 @@ function onTerr(t) {
     return;
   }
   if (g.phase === "attack") {
-    if (sel && t === sel) { sel = null; return paint(); }
-    if (mine) { if (g.troops[t] < 2) { toast("Precisa de 2+ tropas para atacar daqui."); sel = null; return paint(); } sel = t; return paint(); }
+    if (sel && t === sel) { sel = null; return renderGame(); }
+    if (mine) { if (g.troops[t] < 2) { toast("Precisa de 2+ tropas para atacar daqui."); sel = null; return renderGame(); } sel = t; return renderGame(); }
+    if (isAlly(g, uid, g.owner[t])) return toast(`${TI[t].n} é do seu parceiro: não dá para atacar.`);
     if (sel && adj(sel, t)) { openAttack(sel, t); return; }
     if (sel) return toast("Escolha um vizinho inimigo destacado.");
     return terrInfo(t);
   }
   if (g.phase === "move") {
-    if (sel && t === sel) { sel = null; return paint(); }
-    if (sel && mine && adj(sel, t)) {
+    if (sel && t === sel) { sel = null; return renderGame(); }
+    if (sel && t !== sel && (mine || isAlly(g, uid, g.owner[t])) && adj(sel, t)) {
       const m = Math.min(g.movable[sel] || 0, g.troops[sel] - 1);
       if (m < 1) return toast("Nenhuma tropa disponível para mover daqui.");
       const from = sel;
-      stepper(`Mover de ${TI[from].n} para ${TI[t].n}`, m, m, n => aMove(from, t, n), `Pode mover até ${m}`);
+      stepper(`Mover de ${TI[from].n} para ${TI[t].n}${g.owner[t] !== uid ? " (parceiro)" : ""}`, m, m, n => aMove(from, t, n), `Pode mover até ${m}`);
       return;
     }
-    if (mine) { const m = Math.min(g.movable[t] || 0, g.troops[t] - 1); if (m < 1) { toast("Sem tropas móveis aqui."); sel = null; return paint(); } sel = t; return paint(); }
+    if (mine) { const m = Math.min(g.movable[t] || 0, g.troops[t] - 1); if (m < 1) { toast("Sem tropas móveis aqui."); sel = null; return renderGame(); } sel = t; return renderGame(); }
     return terrInfo(t);
   }
 }
@@ -819,8 +870,9 @@ function closeModal() { $("modal").classList.remove("on"); modalKind = null; atk
 $("modal").addEventListener("click", e => { if (e.target.id === "modal" && modalKind !== "conq" && modalKind !== "ready") closeModal(); });
 function openReady() {
   const g = R.game; const c = COLORS[g.col[uid]];
-  openModal(`<h3>🎯 Seu objetivo secreto</h3>
-    <div class="lbl">Você joga com a cor <b style="color:${c.f}">${c.n.toUpperCase()}</b>.</div>
+  const partner = isDuo(g) ? mates(g, uid).find(x => x !== uid) : null;
+  openModal(`<h3>🎯 ${partner ? "Objetivo secreto da sua dupla" : "Seu objetivo secreto"}</h3>
+    <div class="lbl">Você joga com a cor <b style="color:${c.f}">${c.n.toUpperCase()}</b>.${partner ? ` Você está na <b>${teamName(g, uid)}</b> com <b style="color:${COLORS[g.col[partner]].f}">${esc(g.names[partner])}</b>. Vocês não podem se atacar e podem mandar tropas um para o outro no remanejamento.` : ""}</div>
     <div class="obj">${esc(objText(g, uid))}</div>
     <div class="lbl">Guarde segredo! Você pode rever o objetivo a qualquer momento no botão 🎯. Na 1ª rodada ninguém ataca: aproveite para se fortalecer.</div>
     <button class="btn pri" id="rOk">Entendi, estou pronto!</button>`, "ready");
@@ -900,9 +952,10 @@ function openObj() {
 function openConts() {
   const g = R.game;
   openModal(`<h3>🌍 Continentes</h3><div class="list">${Object.keys(CONT).map(c => {
-    const o = contOwner(g, c); const ts = TIDS.filter(t => TI[t].c === c);
+    let o = contOwner(g, c); const ts = TIDS.filter(t => TI[t].c === c);
+    if (!o && isDuo(g)) { const h = g.order.find(u => holds(g, c, u)); if (h) o = h; }
     const mine = ts.filter(t => g.owner[t] === uid).length;
-    return `<div class="it">${o ? `<i class="dot" style="background:${COLORS[g.col[o]].f}"></i>` : '<i class="dot" style="background:transparent;border-color:#475569"></i>'}<div><b>${CONT[c].n}</b> <span class="lbl">+${CONT[c].b} tropas</span><br><span class="lbl">${o ? "Dominado por " + esc(g.names[o]) : `Você tem ${mine} de ${ts.length}`}</span></div><span class="r">${ts.length} terr.</span></div>`;
+    return `<div class="it">${o ? `<i class="dot" style="background:${COLORS[g.col[o]].f}"></i>` : '<i class="dot" style="background:transparent;border-color:#475569"></i>'}<div><b>${CONT[c].n}</b> <span class="lbl">+${CONT[c].b} tropas</span><br><span class="lbl">${o ? "Dominado por " + (isDuo(g) && !contOwner(g, c) ? teamName(g, o) : esc(g.names[o])) : `Você tem ${mine} de ${ts.length}`}</span></div><span class="r">${ts.length} terr.</span></div>`;
   }).join("")}</div><button class="btn" id="kClose">Fechar</button>`, "conts");
   $("kClose").onclick = closeModal;
 }
@@ -931,7 +984,8 @@ function openHelp() {
   <div class="it">🃏 Conquistou pelo menos 1 território no turno? Ganha uma carta. 3 cartas viram tropas (4, 6, 8, 10, 12, 15…).</div>
   <div class="it">⚠️ Ficar ${PASSIVE_LIMIT} rodadas sem atacar faz você receber 1 tropa a menos por rodada, até atacar de novo.</div>
   <div class="it">⏱ Cada turno tem 2 minutos. Se acabar, as tropas que faltam são distribuídas sozinhas e o turno passa.</div>
-  <div class="it">🎯 Vence quem completar primeiro o seu objetivo secreto.</div></div>
+  <div class="it">🎯 Vence quem completar primeiro o seu objetivo secreto.</div>
+  <div class="it">👥 <b>Dupla x Dupla</b> (4 jogadores): as duplas são sorteadas e jogam intercaladas. Parceiros não se atacam, podem mandar tropas um para o outro no remanejamento, e os dois recebem o bônus de um continente dominado pela dupla. A dupla tem um objetivo secreto em comum.</div></div>
   <button class="btn" id="hClose">Fechar</button>`, "help");
   $("hClose").onclick = closeModal;
 }
@@ -940,6 +994,57 @@ async function share() {
   const txt = `Bora jogar Conquista Mundial! Sala ${roomCode}: ${link}`;
   try { if (navigator.share) { await navigator.share({title:"Conquista Mundial", text:txt}); return; } } catch (e) {}
   try { await navigator.clipboard.writeText(txt); toast("Convite copiado!"); } catch (e) { toast(link, 5000); }
+}
+
+/* ================= CHAT DA DUPLA ================= */
+let chatKey = null, chatUnsub = null, chatMsgs = [], chatSeen = 0, chatUnread = 0, chatFirst = true;
+const QUICK = ["Me manda tropas! 🙏", "Vou atacar aqui ⚔️", "Cuidado, estão vindo! ⚠️", "Segura aí 🛡️", "Boa, parceiro! 👏"];
+function stopChat() { if (chatUnsub) chatUnsub(); chatUnsub = null; chatKey = null; chatMsgs = []; chatUnread = 0; chatFirst = true; updChatBadge(); }
+function syncChat() {
+  const g = R && R.game;
+  const key = g && isDuo(g) && g.team[uid] !== undefined ? "t" + g.team[uid] : null;
+  if (key === chatKey) return;
+  stopChat(); if (!key) return;
+  chatKey = key;
+  chatUnsub = onValue(query(ref(db, `rooms/${roomCode}/chat/${key}`), limitToLast(60)), s => {
+    const list = []; s.forEach(c => { list.push(c.val()); });
+    chatMsgs = list;
+    const fresh = list.filter(m => m.ts > chatSeen && m.u !== uid);
+    if (chatFirst) { chatFirst = false; chatSeen = Math.max(chatSeen, ...list.map(m => m.ts), 0); }
+    else if (fresh.length) {
+      if (modalKind === "chat") chatSeen = Math.max(...list.map(m => m.ts));
+      else { chatUnread += fresh.length; chatSeen = Math.max(...list.map(m => m.ts)); const m = fresh[fresh.length - 1]; toast(`💬 ${m.n}: ${m.m}`, 3500); try { navigator.vibrate && navigator.vibrate(60); } catch (e) {} }
+    }
+    updChatBadge();
+    if (modalKind === "chat") drawChat();
+  }, () => { if (chatUnsub) chatUnsub(); chatUnsub = null; });
+}
+function updChatBadge() { const n = $("nChat"); if (n) n.innerHTML = chatUnread ? `<span class="badge">${chatUnread > 9 ? "9+" : chatUnread}</span>` : ""; }
+function drawChat() {
+  const box = $("chatList"); if (!box) return;
+  box.innerHTML = chatMsgs.length ? chatMsgs.map(m => `<div class="msg ${m.u === uid ? "me" : ""}"><small>${esc(m.n)}</small>${esc(m.m)}</div>`).join("") : '<div class="lbl" style="text-align:center;margin:auto">Nenhuma mensagem ainda. Só você e seu parceiro veem este chat.</div>';
+  box.scrollTop = box.scrollHeight;
+}
+async function sendChat(text) {
+  text = (text || "").trim().slice(0, 200); if (!text || !chatKey) return;
+  try { await push(ref(db, `rooms/${roomCode}/chat/${chatKey}`), {u:uid, n:R.game.names[uid], m:text, ts:now()}); }
+  catch (e) { toast("Não foi possível enviar: confira as regras do Firebase."); }
+}
+function openChat() {
+  const g = R.game; const partner = mates(g, uid).find(x => x !== uid);
+  chatUnread = 0; updChatBadge();
+  openModal(`<h3>💬 Chat da ${teamName(g, uid)}</h3>
+    <div class="lbl">Só você e <b style="color:${COLORS[g.col[partner]].f}">${esc(g.names[partner])}</b> veem estas mensagens.</div>
+    <div class="msgs" id="chatList"></div>
+    <div class="quick">${QUICK.map((q, i) => `<button data-q="${i}">${q}</button>`).join("")}</div>
+    <div class="row"><input class="inp" id="chatIn" maxlength="200" placeholder="Mensagem para o parceiro…" style="flex:1"><button class="btn pri" id="chatSend" style="flex:none;width:76px">Enviar</button></div>
+    <button class="btn" id="chatClose">Fechar</button>`, "chat");
+  drawChat();
+  const send = () => { const i = $("chatIn"); sendChat(i.value); i.value = ""; i.focus(); };
+  $("chatSend").onclick = send;
+  $("chatIn").addEventListener("keydown", e => { if (e.key === "Enter") send(); });
+  document.querySelectorAll(".quick button").forEach(b => b.onclick = () => sendChat(QUICK[+b.dataset.q]));
+  $("chatClose").onclick = closeModal;
 }
 
 /* ================= BATALHA (dados na tela de todos) ================= */
@@ -992,10 +1097,13 @@ function renderLobby() {
   const ps = Object.entries(R.players).sort((a, b) => a[1].joined - b[1].joined);
   $("lCount").textContent = ps.length;
   $("lPlayers").innerHTML = ps.map(([u, p]) => `<div class="pitem"><i class="dot" style="background:${COLORS[p.color].f}"></i><div>${esc(p.name)}${u === R.meta.host ? " 👑" : ""}${u === uid ? ' <span class="lbl">(você)</span>' : ""}</div><i class="on-dot ${p.online ? "" : "off"}"></i></div>`).join("");
-  const host = R.meta.host === uid;
+  const host = R.meta.host === uid; const duo = R.meta.mode === "duo";
+  document.querySelectorAll("#lMode button").forEach(b => { const on = (b.dataset.m === "duo") === duo; b.classList.toggle("pri", on); b.disabled = !host && !on; b.onclick = () => host && update(ref(db, `rooms/${roomCode}/meta`), {mode: b.dataset.m}); });
   $("bStart").style.display = host ? "" : "none";
-  $("bStart").disabled = ps.length < 2;
-  $("lWait").textContent = host ? (ps.length < 2 ? "Mande o código para seus amigos. Precisa de pelo menos 2 jogadores." : "Todos prontos? Comece quando quiser.") : "Aguardando o criador da sala começar a partida…";
+  $("bStart").disabled = duo ? ps.length !== 4 : ps.length < 2;
+  $("lWait").textContent = duo
+    ? (ps.length !== 4 ? `Dupla x Dupla precisa de 4 jogadores (faltam ${4 - ps.length}). As duplas são sorteadas no início.` : (host ? "4 jogadores! As duplas serão sorteadas ao começar." : "Aguardando o criador da sala começar…"))
+    : (host ? (ps.length < 2 ? "Mande o código para seus amigos. Precisa de pelo menos 2 jogadores." : "Todos prontos? Comece quando quiser.") : "Aguardando o criador da sala começar a partida…");
 }
 function renderGame() {
   const g = R.game; if (!g) return;
@@ -1019,14 +1127,15 @@ function renderGame() {
     const n = owned(g, u).length, tr = owned(g, u).reduce((s, t) => s + g.troops[t], 0);
     const on = R.players[u] && R.players[u].online;
     const pas = g.passive[u] || 0;
-    return `<div class="chip ${u === cur(g) && !g.winner ? "cur" : ""} ${g.elim[u] ? "dead" : ""}"><i class="dot" style="background:${COLORS[g.col[u]].f}"></i>${esc(g.names[u])}${u === me ? " (você)" : ""} · ${n}🏴 ${tr}⚔ ${(g.cards[u] || []).length}🃏${pas >= 5 ? ` ⚠️${pas}` : ""}${on ? "" : " 📴"}</div>`;
+    return `<div class="chip ${u === cur(g) && !g.winner ? "cur" : ""} ${g.elim[u] ? "dead" : ""}"><i class="dot" style="background:${COLORS[g.col[u]].f}"></i>${isDuo(g) ? `<b>${g.team[u] === 0 ? "A" : "B"}</b> ` : ""}${esc(g.names[u])}${u === me ? " (você)" : (isAlly(g, me, u) ? " 🤝" : "")} · ${n}🏴 ${tr}⚔ ${(g.cards[u] || []).length}🃏${pas >= 5 ? ` ⚠️${pas}` : ""}${on ? "" : " 📴"}</div>`;
   }).join("");
   $("nCards").textContent = (g.cards[me] || []).length;
+  $("bChat").style.display = isDuo(g) && g.team[me] !== undefined ? "" : "none";
   // banner
   const cn = esc(g.names[cur(g)]); let txt = "", warn = "";
   const waitList = g.started === false ? g.order.filter(u => !(g.ready || {})[u]).map(u => esc(g.names[u])) : [];
   if (g.started === false && !g.winner) txt = `🎯 Aguardando confirmarem o objetivo: <b>${waitList.join(", ")}</b>`;
-  else if (g.winner) txt = `🏆 <b>${esc(g.names[g.winner])}</b> venceu! Objetivo: ${esc(objText(g, g.winner))}`;
+  else if (g.winner) txt = isDuo(g) ? `🏆 <b>${teamName(g, g.winner)}</b> (${mates(g, g.winner).map(x => esc(g.names[x])).join(" e ")}) venceu! Objetivo: ${esc(objText(g, g.winner))}` : `🏆 <b>${esc(g.names[g.winner])}</b> venceu! Objetivo: ${esc(objText(g, g.winner))}`;
   else if (g.elim[me]) txt = `Você foi eliminado. Assistindo… Vez de <b>${cn}</b>.`;
   else if (!mine) txt = `Vez de <b>${cn}</b> · ${{deploy:"distribuindo tropas", attack:"atacando", move:"remanejando"}[g.phase]}`;
   else if (g.phase === "deploy") txt = (g.cards[me].length >= 5) ? "Você tem 5 cartas: <b>troque 3</b> antes de distribuir (🃏)." : (g.reinf > 0 ? `Sua vez! Distribua <b>${g.reinf}</b> tropa(s): toque nos seus territórios.${g.round === 1 ? " (1ª rodada: sem ataques)" : ""}` : (g.round === 1 ? "Tropas distribuídas. Toque em <b>Remanejar</b> (1ª rodada não tem ataque)." : "Tropas distribuídas. Toque em <b>Atacar</b>."));
@@ -1070,10 +1179,11 @@ $("bCards").onclick = () => R && R.game && openCards();
 $("bObj").onclick = () => R && R.game && openObj();
 $("bConts").onclick = () => R && R.game && openConts();
 $("bLog").onclick = () => R && R.game && openLog();
+$("bChat").onclick = () => R && R.game && isDuo(R.game) && openChat();
 $("bNext").onclick = async () => {
   const g = R.game;
   if (g.winner) {
-    if (R.meta.host === uid) { await update(ref(db, `rooms/${roomCode}`), {"meta/status":"lobby", game:null}); }
+    if (R.meta.host === uid) { await update(ref(db, `rooms/${roomCode}`), {"meta/status":"lobby", game:null, chat:null}); }
     else toast("O criador da sala pode iniciar uma nova partida.");
     return;
   }
