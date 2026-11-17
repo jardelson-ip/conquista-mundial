@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Conquista Mundial</title>
+<style>
+:root{--bg:#0f172a;--panel:#111a2e;--panel2:#1a2540;--line:#2a3654;--txt:#e5e7eb;--mut:#94a3b8;--acc:#f5b700;--ok:#22c55e;--bad:#ef4444}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overscroll-behavior:none;-webkit-user-select:none;user-select:none}
+button{font:inherit;color:inherit;border:0;cursor:pointer;background:none}
+input{font:inherit}
+.screen{position:fixed;inset:0;display:none;flex-direction:column}
+.screen.on{display:flex}
+.center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:14px;overflow:auto}
+.logo{font-size:34px;font-weight:800;letter-spacing:.5px;text-align:center;line-height:1.1}
+.logo span{color:var(--acc)}
+.sub{color:var(--mut);font-size:14px;text-align:center;max-width:320px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;width:100%;max-width:360px;display:flex;flex-direction:column;gap:10px}
+.inp{width:100%;padding:13px 14px;border-radius:12px;border:1px solid var(--line);background:#0b1222;color:var(--txt);font-size:16px;outline:none;-webkit-user-select:text;user-select:text}
+.inp:focus{border-color:var(--acc)}
+.btn{padding:13px 16px;border-radius:12px;background:var(--panel2);border:1px solid var(--line);font-weight:600;font-size:15px}
+.btn.pri{background:var(--acc);color:#2a1d00;border-color:var(--acc)}
+.btn.red{background:#b91c1c;border-color:#b91c1c;color:#fff}
+.btn:disabled{opacity:.4;cursor:default}
+.row{display:flex;gap:8px}
+.row>*{flex:1}
+.lbl{font-size:13px;color:var(--mut)}
+.code{font-size:44px;font-weight:800;letter-spacing:10px;text-align:center;color:var(--acc)}
+.plist{display:flex;flex-direction:column;gap:8px}
+.pitem{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--panel2)}
+.dot{width:14px;height:14px;border-radius:50%;flex:none;border:2px solid #fff}
+.on-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);margin-left:auto}
+.on-dot.off{background:#64748b}
+/* game */
+#game{background:var(--bg)}
+.top{display:flex;align-items:center;gap:8px;padding:8px 10px;padding-top:max(8px,env(safe-area-inset-top));background:var(--panel);border-bottom:1px solid var(--line)}
+.top .ttl{font-weight:700;font-size:14px;white-space:nowrap}
+.top .ttl small{color:var(--mut);font-weight:500}
+.timer{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums;padding:5px 10px;border-radius:999px;background:var(--panel2);font-size:14px}
+.timer.low{background:#7f1d1d;color:#fff}
+.ibtn{width:34px;height:34px;border-radius:10px;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:16px}
+.chips{display:flex;gap:6px;padding:6px 8px;overflow-x:auto;background:var(--panel);border-bottom:1px solid var(--line);scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;display:flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;background:var(--panel2);font-size:12px;border:2px solid transparent;white-space:nowrap}
+.chip.cur{border-color:var(--acc)}
+.chip.dead{opacity:.4;text-decoration:line-through}
+.chip .dot{width:11px;height:11px;border-width:1.5px}
+#mapbox{flex:1;position:relative;overflow:hidden;min-height:0;background:#9cc9e8}
+#map{width:100%;height:100%;display:block;touch-action:none}
+.zoom{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:6px}
+.zoom button{width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.92);color:#0f172a;font-size:20px;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#0f172a;font-weight:600}
+.bottom{background:var(--panel);border-top:1px solid var(--line);padding:10px;padding-bottom:max(10px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px}
+.banner{font-size:14px;line-height:1.35;min-height:20px}
+.banner b{color:var(--acc)}
+.warn{font-size:12px;color:#fca5a5}
+.acts{display:flex;gap:6px}
+.acts .btn{padding:10px 6px;font-size:13px;flex:1}
+.acts .btn.pri{flex:1.6}
+/* modal */
+.back{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;justify-content:center;z-index:20}
+.back.on{display:flex}
+.sheet{background:var(--panel);border:1px solid var(--line);border-bottom:0;border-radius:18px 18px 0 0;width:100%;max-width:520px;max-height:80vh;overflow:auto;padding:16px;padding-bottom:max(16px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px}
+.sheet h3{margin:0;font-size:17px}
+.step{display:flex;align-items:center;justify-content:center;gap:14px}
+.step button{width:52px;height:52px;border-radius:14px;background:var(--panel2);font-size:26px;font-weight:700}
+.step .val{font-size:36px;font-weight:800;min-width:70px;text-align:center}
+.vs{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:14px}
+.vs .side{flex:1;padding:10px;border-radius:12px;background:var(--panel2);text-align:center}
+.vs .side b{display:block;font-size:24px}
+.cardsgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.tcard{border:2px solid var(--line);border-radius:12px;padding:10px 6px;text-align:center;background:var(--panel2);font-size:12px;min-height:84px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.tcard .sym{font-size:26px;line-height:1}
+.tcard.sel{border-color:var(--acc);background:#2b2410}
+.list{display:flex;flex-direction:column;gap:6px;font-size:14px}
+.list .it{padding:9px 11px;background:var(--panel2);border-radius:10px;display:flex;align-items:center;gap:8px}
+.list .it .r{margin-left:auto;color:var(--mut);font-size:13px}
+/* battle overlay */
+#battle{position:absolute;left:50%;top:10px;transform:translateX(-50%);background:rgba(15,23,42,.94);border:1px solid var(--line);border-radius:14px;padding:10px 14px;display:none;flex-direction:column;gap:6px;align-items:center;z-index:5;min-width:250px;pointer-events:none}
+#battle.on{display:flex}
+#battle .bt{font-size:12px;color:var(--mut);text-align:center}
+.drow{display:flex;gap:6px;align-items:center}
+.die{width:34px;height:34px;border-radius:8px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:4px;box-shadow:inset 0 -2px 0 rgba(0,0,0,.2)}
+.die i{width:6px;height:6px;border-radius:50%;background:#fff;place-self:center;visibility:hidden}
+.die i.v{visibility:visible}
+.die.a{background:#dc2626}
+.die.d{background:#e5e7eb}
+.die.d i{background:#111827}
+.die.lose{opacity:.35}
+.die.rolling{animation:shake .12s infinite}
+@keyframes shake{0%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}100%{transform:rotate(-8deg)}}
+.res{font-size:14px;font-weight:700}
+#toast{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);background:#020617;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:50;display:none;max-width:90vw;text-align:center;border:1px solid var(--line)}
+#toast.on{display:block}
+.obj{font-size:16px;line-height:1.45;padding:14px;border-radius:12px;background:#2b2410;border:1px solid #5c4708}
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div class="screen on" id="home">
+  <div class="center">
+    <div class="logo">CONQUISTA<br><span>MUNDIAL</span></div>
+    <div class="sub">Domine o mundo com seus amigos. De 2 a 4 jogadores, online e ao vivo.</div>
+    <div class="card">
+      <div class="lbl">Seu apelido</div>
+      <input class="inp" id="name" maxlength="14" placeholder="Ex.: General Zé">
+      <button class="btn pri" id="bCreate">Criar sala</button>
+    </div>
+    <div class="card">
+      <div class="lbl">Entrar numa sala</div>
+      <div class="row"><input class="inp" id="codeIn" maxlength="4" placeholder="CÓDIGO" style="text-transform:uppercase;letter-spacing:4px;text-align:center"><button class="btn" id="bJoin" style="flex:.6">Entrar</button></div>
+    </div>
+    <div class="sub" id="authMsg">Conectando…</div>
+  </div>
+</div>
+
+<!-- LOBBY -->
+<div class="screen" id="lobby">
+  <div class="center">
+    <div class="lbl">Código da sala</div>
+    <div class="code" id="lCode">----</div>
+    <button class="btn" id="bShare">Copiar convite</button>
+    <div class="card">
+      <div class="lbl">Jogadores (<span id="lCount">0</span>/4)</div>
+      <div class="plist" id="lPlayers"></div>
+    </div>
+    <button class="btn pri" id="bStart" style="width:100%;max-width:360px">Começar partida</button>
+    <div class="sub" id="lWait"></div>
+    <button class="btn" id="bLeaveLobby" style="width:100%;max-width:360px">Sair da sala</button>
+  </div>
+</div>
+
+<!-- GAME -->
+<div class="screen" id="game">
+  <div class="top">
+    <div class="ttl" id="gTitle">Sala ---- <small></small></div>
+    <div class="timer" id="gTimer">2:00</div>
+    <button class="ibtn" id="bMenu" aria-label="Menu">☰</button>
+  </div>
+  <div class="chips" id="gChips"></div>
+  <div id="mapbox">
+    <svg id="map" viewBox="0 0 680 400" preserveAspectRatio="xMidYMid meet"></svg>
+    <div class="loading" id="mapLoading">Carregando mapa…</div>
+    <div class="zoom">
+      <button id="zIn" aria-label="Aproximar">+</button>
+      <button id="zOut" aria-label="Afastar">−</button>
+      <button id="zReset" aria-label="Centralizar" style="font-size:15px">⤢</button>
+    </div>
+    <div id="battle"></div>
+  </div>
+  <div class="bottom">
+    <div class="banner" id="gBanner"></div>
+    <div class="warn" id="gWarn"></div>
+    <div class="acts">
+      <button class="btn" id="bCards">🃏 <span id="nCards">0</span></button>
+      <button class="btn" id="bObj">🎯</button>
+      <button class="btn" id="bConts">🌍</button>
+      <button class="btn" id="bLog">📜</button>
+      <button class="btn pri" id="bNext">Próxima fase</button>
+    </div>
+  </div>
+</div>
+
+<div class="back" id="modal"><div class="sheet" id="sheet"></div></div>
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getDatabase, ref, set, get, update, onValue, runTransaction, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+/* ================= CONFIG ================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyDuYXPb-vzdvZLnHeX1-E2ex7SiBTWYprE",
+  authDomain: "battle-world-ce05d.firebaseapp.com",
+  databaseURL: "https://battle-world-ce05d-default-rtdb.firebaseio.com",
+  projectId: "battle-world-ce05d",
+  storageBucket: "battle-world-ce05d.firebasestorage.app",
+  messagingSenderId: "665723143522",
+  appId: "1:665723143522:web:4f38528322851e9889d83b"
+};
+const TURN_MS = 120000;          // 2 minutos por turno
+const PASSIVE_LIMIT = 7;         // rodadas sem atacar até a punição
+const GOLD_AT = 10;              // bolinha dourada a partir de 10 soldados
+
+/* ================= DADOS DO MUNDO ================= */
+const CONT = {
+  an:{n:"América do Norte",b:5}, as:{n:"América do Sul",b:3}, eu:{n:"Europa",b:5},
+  af:{n:"África",b:3}, asi:{n:"Ásia",b:7}, oc:{n:"Oceania",b:2}
+};
+// id, nome, continente, longitude, latitude (posição da bolinha)
+const T = [
+ ["alasca","Alasca","an",-152,64],["canw","Canadá Oeste","an",-115,58],["cane","Canadá Leste","an",-78,54],["groen","Groenlândia","an",-41,72],["euaw","EUA Oeste","an",-114,40],["euae","EUA Leste","an",-86,37],["mex","México","an",-102,24],["amc","América Central","an",-87,14.5],["carib","Caribe","an",-74,20],
+ ["col","Colômbia","as",-74,3],["ven","Venezuela","as",-64,6],["peru","Peru","as",-75,-11],["bra","Brasil","as",-50,-10],["arg","Argentina","as",-62,-35],["chi","Chile","as",-70.5,-26],
+ ["uk","Reino Unido","eu",-3,54],["esc","Escandinávia","eu",17,64],["ibe","Península Ibérica","eu",-4,40],["fra","França","eu",2,46.5],["euc","Europa Central","eu",22,51],["ita","Itália/Bálcãs","eu",19,42.5],["rus","Rússia","eu",43,57],
+ ["naf","Norte da África","af",3,28],["egi","Egito","af",29,22],["afo","África Ocidental","af",-4,12],["chif","Chifre da África","af",39,5],["congo","Congo","af",20,-4],["afs","África do Sul","af",26,-24],
+ ["tur","Turquia","asi",36,39],["om","Oriente Médio","asi",45,26],["ira","Irã","asi",60,31],["caz","Cazaquistão","asi",67,47],["sibw","Sibéria Ocidental","asi",80,63],["sibe","Sibéria Oriental","asi",128,64],["mon","Mongólia","asi",103,46.5],["chn","China","asi",104,32],["cor","Coreia","asi",127.5,37.5],["jap","Japão","asi",139,36.5],["ind","Índia","asi",79,21],["sea","Sudeste Asiático","asi",103,15],
+ ["indo","Indonésia","oc",114,-1],["ng","Nova Guiné","oc",144,-6],["aus","Austrália","oc",134,-25],["nz","Nova Zelândia","oc",172,-41]
+];
+const TI = {}; T.forEach(t => TI[t[0]] = {id:t[0], n:t[1], c:t[2], lon:t[3], lat:t[4]});
+const TIDS = T.map(t => t[0]);
+const LINKS = "alasca-canw canw-cane canw-euaw cane-euae cane-groen euaw-euae euaw-mex euae-mex euae-carib mex-amc amc-carib amc-col carib-ven groen-esc cane-uk col-ven col-peru col-bra ven-bra peru-bra peru-chi bra-arg chi-arg bra-afo uk-esc uk-fra fra-ibe fra-euc fra-ita euc-esc euc-ita euc-rus esc-rus ita-tur rus-tur rus-caz rus-sibw ibe-naf ita-naf naf-egi naf-afo egi-chif egi-om afo-congo chif-congo congo-afs chif-afs chif-om tur-om tur-ira om-ira ira-caz ira-ind caz-sibw caz-chn caz-mon sibw-sibe sibw-mon sibe-mon sibe-jap mon-chn chn-cor cor-jap chn-ind chn-sea ind-sea sea-indo indo-ng indo-aus ng-aus aus-nz alasca-sibe".split(" ").map(s => s.split("-"));
+const SEA = new Set("cane-groen groen-esc cane-uk bra-afo ibe-naf ita-naf carib-ven sibe-jap cor-jap sea-indo indo-ng indo-aus aus-nz".split(" "));
+const ADJ = {}; TIDS.forEach(id => ADJ[id] = []);
+LINKS.forEach(([a,b]) => { ADJ[a].push(b); ADJ[b].push(a); });
+const adj = (a,b) => ADJ[a].includes(b);
+
+const COLORS = [
+  {n:"Azul",     f:"#5B8DEF", d:"#1E4FBF"},
+  {n:"Vermelho", f:"#EF6B6B", d:"#B42323"},
+  {n:"Verde",    f:"#4CC27A", d:"#157A3E"},
+  {n:"Roxo",     f:"#A07CF0", d:"#5B33B8"}
+];
+const SYM = ["▲","■","●","★"];
+
+const OBJ = {
+  c1:{t:"Conquistar totalmente a América do Norte e a Oceania.", c:["an","oc"], x:0},
+  c2:{t:"Conquistar totalmente a Ásia e a América do Sul.", c:["asi","as"], x:0},
+  c3:{t:"Conquistar totalmente a Europa, a América do Sul e mais um continente à sua escolha.", c:["eu","as"], x:1},
+  c4:{t:"Conquistar totalmente a Europa, a Oceania e mais um continente à sua escolha.", c:["eu","oc"], x:1},
+  c5:{t:"Conquistar totalmente a América do Norte e a África.", c:["an","af"], x:0},
+  c6:{t:"Conquistar totalmente a Ásia e a África.", c:["asi","af"], x:0},
+  c7:{t:"Conquistar totalmente a América do Sul, a África e a Oceania.", c:["as","af","oc"], x:0},
+  t24:{t:"Conquistar 24 territórios à sua escolha.", n:24, m:1},
+  t18:{t:"Conquistar 18 territórios com pelo menos 2 tropas em cada um.", n:18, m:2},
+  k0:{t:"Eliminar o jogador AZUL. Se outro jogador eliminá-lo antes, seu objetivo passa a ser conquistar 24 territórios.", k:0},
+  k1:{t:"Eliminar o jogador VERMELHO. Se outro jogador eliminá-lo antes, seu objetivo passa a ser conquistar 24 territórios.", k:1},
+  k2:{t:"Eliminar o jogador VERDE. Se outro jogador eliminá-lo antes, seu objetivo passa a ser conquistar 24 territórios.", k:2},
+  k3:{t:"Eliminar o jogador ROXO. Se outro jogador eliminá-lo antes, seu objetivo passa a ser conquistar 24 territórios.", k:3}
+};
+
+/* ================= FIREBASE ================= */
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+let uid = null, offset = 0, roomCode = null, R = null, unsubRoom = null, unsubConn = null;
+const now = () => Date.now() + offset;
+onValue(ref(db, ".info/serverTimeOffset"), s => offset = s.val() || 0);
+
+/* ================= UTIL ================= */
+const $ = id => document.getElementById(id);
+const arr = x => x ? (Array.isArray(x) ? x.filter(v => v !== null && v !== undefined) : Object.values(x)) : [];
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const roll = () => 1 + Math.floor(Math.random() * 6);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let toastT = null;
+function toast(msg, ms = 2600) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), ms); }
+function show(id) { ["home","lobby","game"].forEach(s => $(s).classList.toggle("on", s === id)); }
+
+/* ================= REGRAS (funções puras sobre o estado G) ================= */
+function norm(g) {
+  g.order = arr(g.order); g.log = arr(g.log); g.deck = arr(g.deck); g.discard = arr(g.discard);
+  g.cards = g.cards || {}; g.order.forEach(u => g.cards[u] = arr(g.cards[u]));
+  g.passive = g.passive || {}; g.elim = g.elim || {}; g.movable = g.movable || {}; g.obj = g.obj || {};
+  g.trades = g.trades || 0;
+  return g;
+}
+const cur = g => g.order[g.turnIdx];
+const owned = (g,u) => TIDS.filter(t => g.owner[t] === u);
+function contOwner(g, c) { const ts = TIDS.filter(t => TI[t].c === c); const o = g.owner[ts[0]]; return ts.every(t => g.owner[t] === o) ? o : null; }
+function logp(g, s) { g.log.push(s); if (g.log.length > 40) g.log = g.log.slice(-40); }
+function tradeValue(n) { const v = [4,6,8,10,12,15]; return n <= v.length ? v[n-1] : 15 + 5 * (n - v.length); }
+function validSet(cs) { if (cs.length !== 3) return false; if (cs.some(c => c.s === 3)) return true; const s = cs.map(c => c.s); return (s[0]===s[1] && s[1]===s[2]) || (s[0]!==s[1] && s[1]!==s[2] && s[0]!==s[2]); }
+
+function calcReinf(g, u) {
+  const n = owned(g,u).length;
+  let r = Math.max(3, Math.floor(n / 2));
+  const bonus = [];
+  Object.keys(CONT).forEach(c => { if (contOwner(g,c) === u) { r += CONT[c].b; bonus.push(CONT[c].n); } });
+  let pen = false;
+  if ((g.passive[u] || 0) >= PASSIVE_LIMIT) { r = Math.max(1, r - 1); pen = true; }
+  return {r, bonus, pen};
+}
+function objDone(g, u) {
+  const o = OBJ[g.obj[u]]; if (!o) return false;
+  const mine = owned(g,u);
+  if (mine.length === TIDS.length) return true;
+  if (o.c) {
+    if (!o.c.every(c => contOwner(g,c) === u)) return false;
+    if (o.x) return Object.keys(CONT).some(c => !o.c.includes(c) && contOwner(g,c) === u);
+    return true;
+  }
+  if (o.n) return mine.filter(t => g.troops[t] >= o.m).length >= o.n;
+  return false; // objetivos de eliminação são checados na eliminação
+}
+function startTurn(g) {
+  const u = cur(g);
+  const {r, bonus, pen} = calcReinf(g,u);
+  g.phase = "deploy"; g.reinf = r; g.attacked = false; g.conquered = false; g.movable = {}; g.conq = null;
+  g.deadline = now() + TURN_MS;
+  logp(g, `▶ Vez de ${g.names[u]}: recebe ${r} tropas${bonus.length ? " (bônus: " + bonus.join(", ") + ")" : ""}`);
+  if (pen) logp(g, `⚠️ ${g.names[u]} está há ${g.passive[u]} rodadas sem atacar e recebeu 1 tropa a menos`);
+}
+function drawCard(g, u) {
+  if (!g.deck.length) { g.deck = shuffle(g.discard); g.discard = []; }
+  if (!g.deck.length) return;
+  g.cards[u].push(g.deck.pop());
+}
+function endTurn(g) {
+  const u = cur(g);
+  g.passive[u] = g.attacked ? 0 : (g.passive[u] || 0) + 1;
+  if (g.conquered) drawCard(g, u);
+  if (g.winner) return;
+  let i = g.turnIdx, guard = 0;
+  do { i = (i + 1) % g.order.length; if (i === 0) g.round++; guard++; } while (g.elim[g.order[i]] && guard < 10);
+  g.turnIdx = i;
+  startTurn(g);
+}
+function autoEnd(g) {
+  const u = cur(g);
+  if (g.phase === "deploy" && g.reinf > 0) {
+    const mine = owned(g,u);
+    for (let k = 0; k < g.reinf; k++) { const t = mine[Math.floor(Math.random() * mine.length)]; g.troops[t]++; }
+    g.reinf = 0;
+  }
+  if (g.conq) g.conq = null;
+  logp(g, `⏱ Tempo esgotado para ${g.names[u]}`);
+  endTurn(g);
+}
+function eliminate(g, victim, killer) {
+  g.elim[victim] = true;
+  g.cards[killer] = g.cards[killer].concat(g.cards[victim]); g.cards[victim] = [];
+  const vc = g.col[victim];
+  logp(g, `💀 ${g.names[victim]} foi eliminado por ${g.names[killer]}`);
+  const ko = OBJ[g.obj[killer]];
+  if (ko && ko.k === vc) { g.winner = killer; return; }
+  g.order.forEach(p => { const o = OBJ[g.obj[p]]; if (p !== killer && o && o.k === vc) g.obj[p] = "t24"; });
+}
+
+/* ================= AÇÕES (transações no Firebase) ================= */
+async function act(fn) {
+  let err = null;
+  try {
+    await runTransaction(ref(db, `rooms/${roomCode}/game`), g => {
+      if (!g) return g;
+      norm(g); err = null;
+      const fail = m => { err = m; return false; };
+      if (fn(g, fail) === false) return; // aborta
+      return g;
+    });
+  } catch (e) { err = "Erro de conexão: " + e.message; }
+  if (err) toast(err);
+  return !err;
+}
+const myTurnCheck = (g, fail) => {
+  if (g.winner) return fail("A partida acabou.");
+  if (cur(g) !== uid) return fail("Não é a sua vez.");
+  return true;
+};
+function aPlace(t, n) {
+  return act((g, fail) => {
+    if (myTurnCheck(g, fail) === false) return false;
+    if (g.phase !== "deploy") return fail("Fase errada.");
+    if (g.cards[uid].length >= 5) return fail("Você tem 5 cartas: troque 3 antes de distribuir.");
+    if (g.owner[t] !== uid) return fail("Território não é seu.");
+    n = Math.min(n, g.reinf); if (n < 1) return fail("Sem tropas para distribuir.");
+    g.troops[t] += n; g.reinf -= n;
+  });
+}
+function aNext() {
+  return act((g, fail) => {
+    if (myTurnCheck(g, fail) === false) return false;
+    if (g.phase === "deploy") {
+      if (g.cards[uid].length >= 5) return fail("Você tem 5 cartas: troque 3 primeiro.");
+      if (g.reinf > 0) return fail(`Distribua as ${g.reinf} tropas restantes.`);
+      g.phase = "attack";
+    } else if (g.phase === "attack") {
+      g.phase = "move"; g.conq = null; g.movable = {};
+      owned(g,uid).forEach(t => { if (g.troops[t] > 1) g.movable[t] = g.troops[t] - 1; });
+    } else {
+      endTurn(g);
+    }
+  });
+}
+function aAttack(from, to, blitz) {
+  return act((g, fail) => {
+    if (myTurnCheck(g, fail) === false) return false;
+    if (g.phase !== "attack") return fail("Não é fase de ataque.");
+    if (g.owner[from] !== uid) return fail("Origem não é sua.");
+    if (g.owner[to] === uid) return fail("Esse território já é seu.");
+    if (!adj(from, to)) return fail("Territórios não são vizinhos.");
+    if (g.troops[from] < 2) return fail("Precisa de pelo menos 2 tropas para atacar.");
+    g.conq = null;
+    const def = g.owner[to];
+    let al = 0, dl = 0, rounds = 0, a = [], d = [];
+    do {
+      const ad = Math.min(3, g.troops[from] - 1), dd = Math.min(3, g.troops[to]);
+      a = Array.from({length:ad}, roll).sort((x,y) => y - x);
+      d = Array.from({length:dd}, roll).sort((x,y) => y - x);
+      const pairs = Math.min(ad, dd);
+      let aw = 0, dw = 0;
+      for (let i = 0; i < pairs; i++) { if (a[i] > d[i]) aw++; else dw++; }
+      g.troops[from] -= dw; g.troops[to] -= aw; al += dw; dl += aw; rounds++;
+    } while (blitz && g.troops[to] > 0 && g.troops[from] > 1 && rounds < 200);
+    g.attacked = true;
+    const conquered = g.troops[to] <= 0;
+    g.battle = {by:uid, def, from, to, a, d, al, dl, rounds, conq:conquered, ts:now()};
+    logp(g, `⚔️ ${g.names[uid]} atacou ${TI[to].n} a partir de ${TI[from].n}: atacante perdeu ${al}, defensor perdeu ${dl}${rounds > 1 ? ` (${rounds} rolagens)` : ""}`);
+    if (conquered) {
+      g.owner[to] = uid; g.troops[to] = 1; g.troops[from] -= 1; g.conquered = true;
+      logp(g, `🏳️ ${g.names[uid]} conquistou ${TI[to].n}`);
+      const max = Math.min(2, g.troops[from] - 1);
+      g.conq = max > 0 ? {from, to, max} : null;
+      if (owned(g, def).length === 0) eliminate(g, def, uid);
+      if (!g.winner && objDone(g, uid)) g.winner = uid;
+      if (g.winner) { g.conq = null; logp(g, `🏆 ${g.names[g.winner]} completou o objetivo e venceu!`); }
+    }
+  });
+}
+function aConqMove(n) {
+  return act((g, fail) => {
+    if (myTurnCheck(g, fail) === false) return false;
+    const c = g.conq; if (!c) return false;
+    n = Math.max(0, Math.min(n, c.max, g.troops[c.from] - 1));
+    g.troops[c.from] -= n; g.troops[c.to] += n; g.conq = null;
+  });
+}
+function aMove(from, to, n) {
+  return act((g, fail) => {
+    if (myTurnCheck(g, fail) === false) return false;
+    if (g.phase !== "move") return fail("Não é fase de remanejamento.");
+    if (g.owner[from] !== uid || g.owner[to] !== uid) return fail("Os dois territórios precisam ser seus.");
+    if (!adj(from, to)) return fail("Territórios não são vizinhos.");
+    const m = Math.min(g.movable[from] || 0, g.troops[from] - 1);
+    if (n < 1 || n > m) return fail("Quantidade inválida.");
+    g.troops[from] -= n; g.troops[to] += n; g.movable[from] = (g.movable[from] || 0) - n;
+  });
+}
+function aTrade(idxs) {
+  return act((g, fail) => {
+    if (myTurnCheck(g, fail) === false) return false;
+    if (g.phase !== "deploy") return fail("Só dá para trocar cartas na fase de distribuição.");
+    const hand = g.cards[uid];
+    const cs = idxs.map(i => hand[i]);
+    if (cs.some(c => !c) || !validSet(cs)) return fail("Combinação inválida: 3 iguais, 3 diferentes ou com coringa.");
+    g.cards[uid] = hand.filter((c, i) => !idxs.includes(i));
+    g.discard = g.discard.concat(cs);
+    g.trades++;
+    const v = tradeValue(g.trades);
+    g.reinf += v;
+    let extra = "";
+    const own = cs.find(c => c.t !== "*" && g.owner[c.t] === uid);
+    if (own) { g.troops[own.t] += 2; extra = ` +2 em ${TI[own.t].n}`; }
+    logp(g, `🃏 ${g.names[uid]} trocou cartas e recebeu ${v} tropas${extra}`);
+  });
+}
+let lastTimeoutTry = 0;
+function checkTimeout() {
+  const g = R && R.game; if (!g || g.winner) return;
+  if (now() < g.deadline + 1500) return;
+  if (Date.now() - lastTimeoutTry < 4000) return;
+  lastTimeoutTry = Date.now();
+  const dl = g.deadline;
+  act((g2) => { if (g2.winner || g2.deadline !== dl || now() < g2.deadline + 1000) return false; autoEnd(g2); });
+}
+
+/* ================= SALAS ================= */
+const savedName = () => ($("name").value.trim() || localStorage.getItem("cm_name") || "").slice(0,14);
+function genCode() { const L = "ABCDEFGHJKLMNPQRSTUVWXYZ"; return Array.from({length:4}, () => L[Math.floor(Math.random()*L.length)]).join(""); }
+async function createRoom() {
+  const name = savedName(); if (!name) return toast("Digite seu apelido.");
+  localStorage.setItem("cm_name", name);
+  let code;
+  for (let i = 0; i < 6; i++) { code = genCode(); const s = await get(ref(db, `rooms/${code}/meta`)); if (!s.exists()) break; }
+  await set(ref(db, `rooms/${code}`), { meta:{host:uid, status:"lobby", created:now()}, players:{[uid]:{name, color:0, joined:now(), online:true}} });
+  enterRoom(code);
+}
+async function joinRoom(code) {
+  code = (code || "").trim().toUpperCase();
+  if (code.length !== 4) return toast("O código tem 4 letras.");
+  const name = savedName(); if (!name) return toast("Digite seu apelido.");
+  localStorage.setItem("cm_name", name);
+  const s = await get(ref(db, `rooms/${code}`));
+  if (!s.exists()) return toast("Sala não encontrada.");
+  const room = s.val(); const players = room.players || {};
+  if (players[uid]) { await update(ref(db, `rooms/${code}/players/${uid}`), {name: room.meta.status === "lobby" ? name : players[uid].name}); return enterRoom(code); }
+  if (room.meta.status !== "lobby") return toast("Essa partida já começou.");
+  let ok = false, why = "";
+  await runTransaction(ref(db, `rooms/${code}/players`), ps => {
+    ps = ps || {};
+    if (ps[uid]) { ok = true; return ps; }
+    const used = Object.values(ps).map(p => p.color);
+    if (used.length >= 4) { why = "Sala cheia (máximo 4)."; return; }
+    const color = [0,1,2,3].find(c => !used.includes(c));
+    ps[uid] = {name, color, joined:now(), online:true}; ok = true; return ps;
+  });
+  if (!ok) return toast(why || "Não foi possível entrar.");
+  enterRoom(code);
+}
+function enterRoom(code) {
+  leaveListeners();
+  roomCode = code; localStorage.setItem("cm_room", code);
+  history.replaceState(null, "", location.pathname + "?sala=" + code);
+  const onRef = ref(db, `rooms/${code}/players/${uid}/online`);
+  unsubConn = onValue(ref(db, ".info/connected"), s => {
+    if (s.val() === true) { onDisconnect(onRef).set(false).then(() => set(onRef, true)); }
+  });
+  firstSnap = true;
+  unsubRoom = onValue(ref(db, `rooms/${code}`), s => {
+    R = s.val();
+    if (!R || !R.players || !R.players[uid]) { toast("Você não está nesta sala."); leaveRoom(); return; }
+    if (R.game) norm(R.game);
+    render();
+  });
+}
+function leaveListeners() { if (unsubRoom) unsubRoom(); if (unsubConn) unsubConn(); unsubRoom = unsubConn = null; }
+async function leaveRoom() {
+  const code = roomCode;
+  if (code && R && R.meta && R.meta.status === "lobby" && R.players && R.players[uid]) {
+    await set(ref(db, `rooms/${code}/players/${uid}`), null);
+  } else if (code) { set(ref(db, `rooms/${code}/players/${uid}/online`), false); }
+  leaveListeners(); roomCode = null; R = null; localStorage.removeItem("cm_room");
+  history.replaceState(null, "", location.pathname);
+  closeModal(); show("home");
+}
+async function startGame() {
+  const ps = R.players; const uids = Object.keys(ps);
+  if (uids.length < 2) return toast("Precisa de pelo menos 2 jogadores.");
+  const order = shuffle(uids);
+  const g = { order, turnIdx:0, round:1, owner:{}, troops:{}, names:{}, col:{}, obj:{}, cards:{}, passive:{}, elim:{}, log:[], deck:[], discard:[], trades:0, winner:null };
+  uids.forEach(u => { g.names[u] = ps[u].name; g.col[u] = ps[u].color; g.cards[u] = []; g.passive[u] = 0; });
+  shuffle(TIDS).forEach((t, i) => { g.owner[t] = order[i % order.length]; g.troops[t] = 1; });
+  const colorsInGame = uids.map(u => ps[u].color);
+  const pool = shuffle(Object.keys(OBJ)); const usedObj = new Set();
+  order.forEach(u => {
+    const k = pool.find(k => !usedObj.has(k) && (OBJ[k].k === undefined || (OBJ[k].k !== ps[u].color && colorsInGame.includes(OBJ[k].k))));
+    g.obj[u] = k; usedObj.add(k);
+  });
+  g.deck = shuffle(TIDS.map((t, i) => ({t, s:i % 3})).concat([{t:"*", s:3}, {t:"*", s:3}]));
+  norm(g);
+  logp(g, "🌍 A partida começou! Ordem: " + order.map(u => g.names[u]).join(" → "));
+  startTurn(g);
+  await update(ref(db, `rooms/${roomCode}`), {"meta/status":"playing", game:g});
+}
+
+/* ================= MAPA ================= */
+const W = 680, H = 400;
+const svg = d3.select("#map");
+const gRoot = svg.append("g");
+const defs = svg.append("defs");
+const proj = d3.geoMercator().scale(W / (2 * Math.PI)).translate([W/2, 0]);
+proj.translate([W/2, -proj([0, 80])[1] + 4]);
+const gpath = d3.geoPath(proj);
+let landSel = null, nodeSel = null, mapReady = false, zoomK = 1;
+const zoom = d3.zoom().scaleExtent([1, 10]).translateExtent([[0,0],[W,H]]).on("zoom", e => { gRoot.attr("transform", e.transform); zoomK = e.transform.k; scaleMarks(); });
+svg.call(zoom).on("dblclick.zoom", null);
+$("zIn").onclick = () => svg.transition().duration(250).call(zoom.scaleBy, 1.6);
+$("zOut").onclick = () => svg.transition().duration(250).call(zoom.scaleBy, 1 / 1.6);
+$("zReset").onclick = () => svg.transition().duration(300).call(zoom.scaleTo, 1);
+let lastBox = "";
+function fitMap() {
+  const r = $("mapbox").getBoundingClientRect(); if (!r.width || !r.height) return;
+  const key = Math.round(r.width) + "x" + Math.round(r.height); if (key === lastBox) return; lastBox = key;
+  const Wv = Math.max(W, H * r.width / r.height), Hv = Math.max(H, W * r.height / r.width);
+  svg.attr("viewBox", `0 0 ${Wv} ${Hv}`);
+  zoom.extent([[0,0],[Wv,Hv]]);
+  svg.call(zoom.scaleTo, zoomK || 1);
+}
+window.addEventListener("resize", () => fitMap());
+
+const O = {}; const addO = (t, s) => s.split(",").forEach(n => O[n] = t);
+addO("chi","Chile");addO("arg","Argentina,Uruguay,Paraguay,Falkland Is.");addO("peru","Peru,Bolivia");addO("col","Colombia,Ecuador");addO("ven","Venezuela,Guyana,Suriname");addO("bra","Brazil");
+addO("groen","Greenland");addO("mex","Mexico");addO("carib","Cuba,Haiti,Dominican Rep.,Jamaica,Puerto Rico,Bahamas,Trinidad and Tobago");addO("amc","Guatemala,Belize,Honduras,El Salvador,Nicaragua,Costa Rica,Panama");
+addO("uk","United Kingdom,Ireland,Iceland");addO("esc","Norway,Sweden,Finland,Denmark");addO("ibe","Spain,Portugal");addO("fra","France,Belgium,Netherlands,Luxembourg,Switzerland");addO("euc","Germany,Poland,Czechia,Austria,Slovakia,Hungary,Lithuania,Latvia,Estonia,Belarus,Ukraine,Moldova");addO("ita","Italy,Slovenia,Croatia,Bosnia and Herz.,Serbia,Montenegro,Kosovo,Albania,Macedonia,North Macedonia,Greece,Bulgaria,Romania");
+addO("naf","Morocco,W. Sahara,Algeria,Tunisia,Libya");addO("egi","Egypt,Sudan,S. Sudan,Chad");addO("afo","Mauritania,Mali,Niger,Senegal,Gambia,Guinea,Guinea-Bissau,Sierra Leone,Liberia,Côte d'Ivoire,Ghana,Togo,Benin,Burkina Faso,Nigeria");addO("chif","Ethiopia,Eritrea,Djibouti,Somalia,Somaliland,Kenya,Uganda,Tanzania");addO("congo","Dem. Rep. Congo,Congo,Gabon,Cameroon,Central African Rep.,Eq. Guinea,Angola,Rwanda,Burundi,Zambia");addO("afs","South Africa,Namibia,Botswana,Zimbabwe,Mozambique,Malawi,Lesotho,eSwatini,Madagascar");
+addO("tur","Turkey,Georgia,Armenia,Azerbaijan,Cyprus,N. Cyprus");addO("om","Saudi Arabia,Yemen,Oman,United Arab Emirates,Qatar,Kuwait,Iraq,Syria,Jordan,Israel,Lebanon,Palestine");addO("ira","Iran,Afghanistan,Pakistan");addO("caz","Kazakhstan,Uzbekistan,Turkmenistan,Kyrgyzstan,Tajikistan");addO("mon","Mongolia");addO("chn","China,Taiwan");addO("cor","North Korea,South Korea");addO("jap","Japan");addO("ind","India,Nepal,Bhutan,Bangladesh,Sri Lanka");addO("sea","Myanmar,Thailand,Laos,Vietnam,Cambodia,Malaysia,Philippines,Brunei");
+addO("indo","Indonesia,Timor-Leste");addO("ng","Papua New Guinea,Solomon Is.,Vanuatu");addO("aus","Australia");addO("nz","New Zealand,Fiji,New Caledonia");
+const SPLIT = {
+  "Russia":[["rus",-160,60,-85,85],["sibw",60,100,-85,85],["sibe",100,180,-85,85],["sibe",-180,-160,-85,85]],
+  "Canada":[["canw",-180,-95,-85,85],["cane",-95,0,-85,85]],
+  "United States of America":[["alasca",-180,-130,50,85],["euaw",-180,-100,-85,50],["euae",-100,0,-85,50]]
+};
+const nearest = ll => { let b = null, bd = 1e9; T.forEach(t => { const d = d3.geoDistance(ll, [t[3], t[4]]); if (d < bd) { bd = d; b = t[0]; } }); return b; };
+let clipN = 0;
+function clipRect(a, b, c, d) {
+  const id = "cr" + (clipN++);
+  const x1 = proj([a,0])[0], x2 = proj([b,0])[0], y1 = proj([0,d])[1], y2 = proj([0,c])[1];
+  defs.append("clipPath").attr("id", id).append("rect").attr("x", x1).attr("y", y1).attr("width", x2 - x1).attr("height", y2 - y1);
+  return `url(#${id})`;
+}
+
+async function buildMap() {
+  let w;
+  try { w = await d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json"); }
+  catch (e) { $("mapLoading").textContent = "Erro ao carregar o mapa. Recarregue a página."; return; }
+  const BAD = ["Antarctica","Fr. S. Antarctic Lands"];
+  w.objects.countries.geometries = w.objects.countries.geometries.filter(gm => gm.id !== "010" && !BAD.includes((gm.properties || {}).name));
+  const feats = topojson.feature(w, w.objects.countries).features;
+  const terrOf = f => { const n = f.properties.name; if (SPLIT[n]) return n; return O[n] || nearest(d3.geoCentroid(f)); };
+  const contOf = f => { const n = f.properties.name; if (n === "Russia") return "ru"; if (SPLIT[n]) return "an"; return TI[terrOf(f)].c; };
+  const land = gRoot.append("g");
+  feats.forEach(f => {
+    const n = f.properties.name;
+    if (SPLIT[n]) { SPLIT[n].forEach(p => land.append("path").datum(f).attr("d", gpath).attr("clip-path", clipRect(p[1],p[2],p[3],p[4])).attr("data-t", p[0])); return; }
+    const polys = f.geometry.type === "MultiPolygon" ? f.geometry.coordinates.map(c => ({type:"Feature", properties:f.properties, geometry:{type:"Polygon", coordinates:c}})) : [f];
+    polys.forEach(pf => {
+      let t = O[n]; const cen = d3.geoCentroid(pf);
+      if (!t || d3.geoDistance(cen, [TI[t].lon, TI[t].lat]) > 0.8) t = nearest(cen);
+      land.append("path").datum(pf).attr("d", gpath).attr("data-t", t);
+    });
+  });
+  landSel = land.selectAll("path").attr("fill", "#d6d3c4").attr("stroke-width", 0.5).style("cursor", "pointer");
+  // fronteiras entre territórios (brancas)
+  const bord = gRoot.append("g").attr("fill", "none").attr("stroke", "#ffffff").attr("stroke-linejoin", "round").attr("class", "b1");
+  bord.append("path").datum(topojson.mesh(w, w.objects.countries, (a,b) => a !== b && terrOf(a) !== terrOf(b))).attr("d", gpath);
+  const splitLine = (name, lon, la, lb, g) => {
+    const f = feats.find(x => x.properties.name === name); if (!f) return;
+    const id = "cl" + (clipN++); defs.append("clipPath").attr("id", id).append("path").attr("d", gpath(f));
+    g.append("path").attr("d", gpath({type:"LineString", coordinates:d3.range(la, lb + .5, 1).map(l => [lon, l])})).attr("clip-path", `url(#${id})`);
+  };
+  splitLine("Russia",100,40,85,bord); splitLine("Canada",-95,40,85,bord); splitLine("United States of America",-100,24,50,bord);
+  // fronteiras entre continentes (escuras e grossas)
+  const cb = gRoot.append("g").attr("fill", "none").attr("stroke", "#1e293b").attr("stroke-linejoin", "round").attr("opacity", .75).attr("class", "b2");
+  cb.append("path").datum(topojson.mesh(w, w.objects.countries, (a,b) => a !== b && contOf(a) !== "ru" && contOf(b) !== "ru" && contOf(a) !== contOf(b))).attr("d", gpath);
+  const isRu = f => f.properties.name === "Russia";
+  cb.append("path").datum(topojson.mesh(w, w.objects.countries, (a,b) => a !== b && (isRu(a) || isRu(b)) && contOf(isRu(a) ? b : a) !== "eu")).attr("d", gpath).attr("clip-path", clipRect(-160, 60, -85, 85));
+  cb.append("path").datum(topojson.mesh(w, w.objects.countries, (a,b) => a !== b && (isRu(a) || isRu(b)) && contOf(isRu(a) ? b : a) !== "asi")).attr("d", gpath).attr("clip-path", clipRect(60, 180, -85, 85));
+  splitLine("Russia",60,40,85,cb);
+  // litoral
+  gRoot.append("path").datum(topojson.mesh(w, w.objects.countries, (a,b) => a === b)).attr("d", gpath).attr("fill", "none").attr("stroke", "#3f6382").attr("class", "b3");
+  // rotas marítimas
+  const P = {}; T.forEach(t => P[t[0]] = proj([t[3], t[4]]));
+  const sea = gRoot.append("g").attr("stroke", "#ffffff").attr("stroke-dasharray", "4 4").attr("opacity", .75).attr("fill", "none").attr("class", "sea");
+  SEA.forEach(k => { const [a,b] = k.split("-"); sea.append("line").attr("x1", P[a][0]).attr("y1", P[a][1]).attr("x2", P[b][0]).attr("y2", P[b][1]); });
+  sea.append("line").attr("x1", P.alasca[0]).attr("y1", P.alasca[1]).attr("x2", 2).attr("y2", P.alasca[1]);
+  sea.append("line").attr("x1", P.sibe[0]).attr("y1", P.sibe[1]).attr("x2", W - 2).attr("y2", P.alasca[1]);
+  // bolinhas
+  nodeSel = gRoot.append("g").selectAll("g").data(TIDS).join("g").attr("transform", t => `translate(${P[t]})`).style("cursor", "pointer");
+  nodeSel.append("circle").attr("class", "bub");
+  nodeSel.append("text").attr("class", "num").attr("text-anchor", "middle").attr("dominant-baseline", "central").attr("font-weight", 800).attr("font-family", "system-ui,sans-serif");
+  nodeSel.append("text").attr("class", "lbl").attr("text-anchor", "middle").attr("fill", "#0f172a").attr("paint-order", "stroke").attr("stroke", "#ffffff").attr("stroke-linejoin", "round").attr("font-weight", 600).attr("font-family", "system-ui,sans-serif").text(t => TI[t].n);
+  landSel.on("click", function (e) { e.stopPropagation(); onTerr(this.getAttribute("data-t")); });
+  nodeSel.on("click", (e, t) => { e.stopPropagation(); onTerr(t); });
+  mapReady = true; $("mapLoading").style.display = "none";
+  scaleMarks(); paint();
+}
+let labelsFor = new Set();
+function scaleMarks() {
+  if (!mapReady) return;
+  const k = zoomK, s = 1 / Math.pow(k, 0.7);
+  nodeSel.select(".bub").attr("r", 8 * s).attr("stroke-width", 1.8 * s);
+  nodeSel.select(".num").attr("font-size", 9 * s);
+  nodeSel.select(".lbl").attr("font-size", 10 / k).attr("y", 8 * s + 10 / k).attr("stroke-width", 2.8 / k)
+    .attr("display", t => (k >= 1.8 || labelsFor.has(t)) ? null : "none");
+  gRoot.select(".b1").attr("stroke-width", 1 / Math.sqrt(k));
+  gRoot.select(".b2").attr("stroke-width", 2.2 / Math.sqrt(k));
+  gRoot.select(".b3").attr("stroke-width", .6 / Math.sqrt(k));
+  gRoot.select(".sea").attr("stroke-width", 1 / k);
+}
+let prevOwner = {};
+function paint() {
+  if (!mapReady) return;
+  const g = R && R.game;
+  const cand = candidates();
+  labelsFor = new Set(sel ? [sel, ...cand] : []);
+  const dim = !!sel;
+  landSel.each(function () {
+    const t = this.getAttribute("data-t"); const el = d3.select(this);
+    const o = g && g.owner[t]; const col = o ? COLORS[g.col[o]].f : "#d6d3c4";
+    const changed = g && prevOwner[t] && prevOwner[t] !== o;
+    if (changed) el.attr("fill", "#ffffff").transition().duration(700).attr("fill", col).attr("stroke", col);
+    else el.interrupt().attr("fill", col).attr("stroke", col);
+    el.attr("opacity", dim && t !== sel && !cand.includes(t) ? 0.4 : 1);
+  });
+  if (g) { const po = {}; TIDS.forEach(t => po[t] = g.owner[t]); setTimeout(() => prevOwner = po, 0); }
+  nodeSel.each(function (t) {
+    const el = d3.select(this); const o = g && g.owner[t]; const n = g ? g.troops[t] : 0;
+    const gold = n >= GOLD_AT; const c = o ? COLORS[g.col[o]] : {f:"#999", d:"#333"};
+    el.select(".bub").attr("fill", gold ? "#F5B700" : "#ffffff").attr("stroke", t === sel ? "#f5b700" : (gold ? "#8A6100" : c.d));
+    el.select(".num").attr("fill", gold ? "#3d2a00" : c.d).text(g ? n : "");
+    el.attr("opacity", dim && t !== sel && !cand.includes(t) ? 0.45 : 1);
+  });
+  if (sel) { landSel.filter(function () { return this.getAttribute("data-t") === sel; }).attr("stroke", "#f5b700").attr("stroke-width", 2 / Math.sqrt(zoomK)).raise(); }
+  else landSel.attr("stroke-width", 0.5);
+  scaleMarks();
+}
+
+/* ================= INTERAÇÃO NO MAPA ================= */
+let sel = null;
+function candidates() {
+  const g = R && R.game; if (!g || !sel || cur(g) !== uid) return [];
+  if (g.phase === "attack") return ADJ[sel].filter(t => g.owner[t] !== uid);
+  if (g.phase === "move") return ADJ[sel].filter(t => g.owner[t] === uid);
+  return [];
+}
+function terrInfo(t) {
+  const g = R.game; const o = g.owner[t];
+  toast(`${TI[t].n} · ${CONT[TI[t].c].n} · ${g.names[o]} · ${g.troops[t]} soldado(s)`);
+}
+function onTerr(t) {
+  const g = R && R.game; if (!g) return;
+  if (g.winner || cur(g) !== uid) { terrInfo(t); return; }
+  const mine = g.owner[t] === uid;
+  if (g.phase === "deploy") {
+    if (!mine) return terrInfo(t);
+    if (g.cards[uid].length >= 5) { toast("Você tem 5 cartas: troque 3 primeiro."); openCards(); return; }
+    if (g.reinf < 1) return toast("Você já distribuiu todas as tropas. Toque em Atacar.");
+    stepper(`Colocar tropas em ${TI[t].n}`, g.reinf, 1, n => aPlace(t, n), `Disponíveis: ${g.reinf}`);
+    return;
+  }
+  if (g.phase === "attack") {
+    if (sel && t === sel) { sel = null; return paint(); }
+    if (mine) { if (g.troops[t] < 2) { toast("Precisa de 2+ tropas para atacar daqui."); sel = null; return paint(); } sel = t; return paint(); }
+    if (sel && adj(sel, t)) { openAttack(sel, t); return; }
+    if (sel) return toast("Escolha um vizinho inimigo destacado.");
+    return terrInfo(t);
+  }
+  if (g.phase === "move") {
+    if (sel && t === sel) { sel = null; return paint(); }
+    if (sel && mine && adj(sel, t)) {
+      const m = Math.min(g.movable[sel] || 0, g.troops[sel] - 1);
+      if (m < 1) return toast("Nenhuma tropa disponível para mover daqui.");
+      const from = sel;
+      stepper(`Mover de ${TI[from].n} para ${TI[t].n}`, m, m, n => aMove(from, t, n), `Pode mover até ${m}`);
+      return;
+    }
+    if (mine) { const m = Math.min(g.movable[t] || 0, g.troops[t] - 1); if (m < 1) { toast("Sem tropas móveis aqui."); sel = null; return paint(); } sel = t; return paint(); }
+    return terrInfo(t);
+  }
+}
+
+/* ================= MODAIS ================= */
+let modalKind = null;
+function openModal(html, kind) { $("sheet").innerHTML = html; $("modal").classList.add("on"); modalKind = kind || "x"; }
+function closeModal() { $("modal").classList.remove("on"); modalKind = null; atk = null; }
+$("modal").addEventListener("click", e => { if (e.target.id === "modal" && modalKind !== "conq") closeModal(); });
+function stepper(title, max, def, onOk, sub) {
+  let v = Math.max(1, Math.min(def, max));
+  openModal(`<h3>${esc(title)}</h3><div class="lbl">${esc(sub || "")}</div>
+    <div class="step"><button id="sMinus">−</button><div class="val" id="sVal">${v}</div><button id="sPlus">+</button></div>
+    <div class="row"><button class="btn" id="sMax">Máximo (${max})</button><button class="btn pri" id="sOk">Confirmar</button></div>
+    <button class="btn" id="sCancel">Cancelar</button>`, "step");
+  const upd = () => $("sVal").textContent = v;
+  $("sMinus").onclick = () => { v = Math.max(1, v - 1); upd(); };
+  $("sPlus").onclick = () => { v = Math.min(max, v + 1); upd(); };
+  $("sMax").onclick = () => { v = max; upd(); };
+  $("sOk").onclick = () => { closeModal(); onOk(v); };
+  $("sCancel").onclick = closeModal;
+}
+let atk = null;
+function openAttack(from, to) { atk = {from, to}; renderAttack(); }
+function renderAttack() {
+  const g = R.game; if (!atk) return;
+  const {from, to} = atk;
+  if (g.owner[to] === uid || g.owner[from] !== uid || cur(g) !== uid || g.phase !== "attack" || g.winner) { closeModal(); return; }
+  const a = g.troops[from], d = g.troops[to];
+  const can = a >= 2;
+  openModal(`<h3>⚔️ Ataque</h3>
+    <div class="vs"><div class="side">${esc(TI[from].n)}<b style="color:${COLORS[g.col[uid]].f}">${a}</b><span class="lbl">rola ${Math.min(3, Math.max(0, a - 1))} dado(s)</span></div>
+    <div>➜</div><div class="side">${esc(TI[to].n)}<b style="color:${COLORS[g.col[g.owner[to]]].f}">${d}</b><span class="lbl">rola ${Math.min(3, d)} dado(s)</span></div></div>
+    <div class="lbl">Os dados são comparados 1 contra 1, do maior para o menor. Empate: vence o defensor.</div>
+    <div class="row"><button class="btn pri" id="aOne" ${can ? "" : "disabled"}>🎲 Rolar dados</button><button class="btn red" id="aAll" ${can ? "" : "disabled"}>Atacar até o fim</button></div>
+    <button class="btn" id="aCancel">Fechar</button>`, "atk");
+  $("aOne").onclick = () => { $("aOne").disabled = true; aAttack(from, to, false); };
+  $("aAll").onclick = () => { $("aAll").disabled = true; aAttack(from, to, true); };
+  $("aCancel").onclick = () => { closeModal(); sel = null; paint(); };
+}
+function openConq(c) {
+  const g = R.game;
+  let v = c.max;
+  openModal(`<h3>🏳️ ${esc(TI[c.to].n)} conquistado!</h3>
+    <div class="lbl">1 tropa já entrou. Quantas tropas extras mover de ${esc(TI[c.from].n)}? (até ${c.max})</div>
+    <div class="step"><button id="cMinus">−</button><div class="val" id="cVal">${v}</div><button id="cPlus">+</button></div>
+    <button class="btn pri" id="cOk">Confirmar</button>`, "conq");
+  const upd = () => $("cVal").textContent = v;
+  $("cMinus").onclick = () => { v = Math.max(0, v - 1); upd(); };
+  $("cPlus").onclick = () => { v = Math.min(c.max, v + 1); upd(); };
+  $("cOk").onclick = () => { closeModal(); sel = null; aConqMove(v); };
+}
+let pickCards = [];
+function openCards() {
+  const g = R.game; const hand = g.cards[uid] || [];
+  pickCards = pickCards.filter(i => i < hand.length);
+  const can = cur(g) === uid && g.phase === "deploy" && !g.winner;
+  const ok = pickCards.length === 3 && validSet(pickCards.map(i => hand[i]));
+  openModal(`<h3>🃏 Suas cartas (${hand.length})</h3>
+    <div class="lbl">Troque 3 cartas: todas com o mesmo símbolo, todas diferentes ou com um coringa ★. Próxima troca vale <b>${tradeValue(g.trades + 1)}</b> tropas. Com 5 cartas a troca é obrigatória.</div>
+    <div class="cardsgrid">${hand.length ? hand.map((c, i) => `<button class="tcard ${pickCards.includes(i) ? "sel" : ""}" data-i="${i}"><span class="sym">${SYM[c.s]}</span>${c.t === "*" ? "Coringa" : esc(TI[c.t].n)}</button>`).join("") : '<div class="lbl">Você ainda não tem cartas. Conquiste ao menos 1 território no seu turno para ganhar uma.</div>'}</div>
+    <button class="btn pri" id="cTrade" ${can && ok ? "" : "disabled"}>${can ? "Trocar cartas selecionadas" : "Troca só na sua fase de distribuição"}</button>
+    <button class="btn" id="cClose">Fechar</button>`, "cards");
+  document.querySelectorAll(".tcard").forEach(b => b.onclick = () => {
+    const i = +b.dataset.i;
+    pickCards = pickCards.includes(i) ? pickCards.filter(x => x !== i) : (pickCards.length < 3 ? pickCards.concat(i) : pickCards);
+    openCards();
+  });
+  $("cTrade").onclick = async () => { const idx = pickCards.slice(); pickCards = []; closeModal(); await aTrade(idx); };
+  $("cClose").onclick = closeModal;
+}
+function openObj() {
+  const g = R.game; const k = g.obj[uid];
+  let extra = "";
+  if (g.winner) extra = "<h3>Objetivos de todos</h3><div class='list'>" + g.order.map(u => `<div class="it"><i class="dot" style="background:${COLORS[g.col[u]].f}"></i><div><b>${esc(g.names[u])}</b><br><span class="lbl">${esc(OBJ[g.obj[u]].t)}</span></div></div>`).join("") + "</div>";
+  openModal(`<h3>🎯 Seu objetivo secreto</h3><div class="obj">${k ? esc(OBJ[k].t) : "Você está assistindo esta partida."}</div>
+    <div class="lbl">Não mostre para ninguém! Ao completar, você vence na hora.</div>${extra}
+    <button class="btn" id="oClose">Fechar</button>`, "obj");
+  $("oClose").onclick = closeModal;
+}
+function openConts() {
+  const g = R.game;
+  openModal(`<h3>🌍 Continentes</h3><div class="list">${Object.keys(CONT).map(c => {
+    const o = contOwner(g, c); const ts = TIDS.filter(t => TI[t].c === c);
+    const mine = ts.filter(t => g.owner[t] === uid).length;
+    return `<div class="it">${o ? `<i class="dot" style="background:${COLORS[g.col[o]].f}"></i>` : '<i class="dot" style="background:transparent;border-color:#475569"></i>'}<div><b>${CONT[c].n}</b> <span class="lbl">+${CONT[c].b} tropas</span><br><span class="lbl">${o ? "Dominado por " + esc(g.names[o]) : `Você tem ${mine} de ${ts.length}`}</span></div><span class="r">${ts.length} terr.</span></div>`;
+  }).join("")}</div><button class="btn" id="kClose">Fechar</button>`, "conts");
+  $("kClose").onclick = closeModal;
+}
+function openLog() {
+  const g = R.game;
+  openModal(`<h3>📜 Registro</h3><div class="list">${g.log.slice().reverse().map(l => `<div class="it" style="font-size:13px">${esc(l)}</div>`).join("")}</div><button class="btn" id="gClose">Fechar</button>`, "log");
+  $("gClose").onclick = closeModal;
+}
+function openMenu() {
+  openModal(`<h3>Menu</h3><div class="lbl">Sala ${roomCode}. Se você sair, pode voltar depois com o mesmo código e continuar de onde parou.</div>
+    <button class="btn" id="mShare">Copiar convite da sala</button>
+    <button class="btn" id="mHelp">Como jogar</button>
+    <button class="btn red" id="mLeave">Sair da partida</button>
+    <button class="btn" id="mClose">Fechar</button>`, "menu");
+  $("mShare").onclick = share;
+  $("mHelp").onclick = openHelp;
+  $("mLeave").onclick = leaveRoom;
+  $("mClose").onclick = closeModal;
+}
+function openHelp() {
+  openModal(`<h3>Como jogar</h3><div class="list" style="font-size:13px;line-height:1.45">
+  <div class="it">1. <b>Distribuir:</b> no início do turno você recebe tropas (metade dos seus territórios, mínimo 3, + bônus de continentes dominados). Toque nos seus territórios para colocá-las.</div>
+  <div class="it">2. <b>Atacar:</b> toque num território seu com 2+ tropas e depois num vizinho inimigo. Cada lado rola até 3 dados; eles se enfrentam 1 contra 1 e cada derrota tira 1 soldado. Empate: defensor vence.</div>
+  <div class="it">3. <b>Remanejar:</b> mova tropas entre territórios seus vizinhos. Depois, encerre o turno.</div>
+  <div class="it">🃏 Conquistou pelo menos 1 território no turno? Ganha uma carta. 3 cartas viram tropas (4, 6, 8, 10, 12, 15…).</div>
+  <div class="it">⚠️ Ficar ${PASSIVE_LIMIT} rodadas sem atacar faz você receber 1 tropa a menos por rodada, até atacar de novo.</div>
+  <div class="it">⏱ Cada turno tem 2 minutos. Se acabar, as tropas que faltam são distribuídas sozinhas e o turno passa.</div>
+  <div class="it">🎯 Vence quem completar primeiro o seu objetivo secreto.</div></div>
+  <button class="btn" id="hClose">Fechar</button>`, "help");
+  $("hClose").onclick = closeModal;
+}
+async function share() {
+  const link = location.origin + location.pathname + "?sala=" + roomCode;
+  const txt = `Bora jogar Conquista Mundial! Sala ${roomCode}: ${link}`;
+  try { if (navigator.share) { await navigator.share({title:"Conquista Mundial", text:txt}); return; } } catch (e) {}
+  try { await navigator.clipboard.writeText(txt); toast("Convite copiado!"); } catch (e) { toast(link, 5000); }
+}
+
+/* ================= BATALHA (dados na tela de todos) ================= */
+const PIPS = {1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+const dieHTML = (n, cls) => `<div class="die ${cls}">${Array.from({length:9}, (_, i) => `<i class="${PIPS[n].includes(i) ? "v" : ""}"></i>`).join("")}</div>`;
+let lastBattleTs = null, battleT = null;
+function showBattle(b, g) {
+  const el = $("battle");
+  const pairs = Math.min(b.a.length, b.d.length);
+  const rollRow = (arr, cls, other, att) => arr.map((v, i) => {
+    let lose = false; if (i < pairs) lose = att ? !(v > other[i]) : (other[i] > v);
+    return dieHTML(v, cls + " rolling" + (i < pairs && lose ? " L" : ""));
+  }).join("");
+  el.innerHTML = `<div class="bt">${esc(g.names[b.by])} ⚔️ ${esc(TI[b.to].n)}${b.rounds > 1 ? ` · ${b.rounds} rolagens` : ""}</div>
+    <div class="drow">${rollRow(b.a, "a", b.d, true)}<span style="margin:0 6px;color:#94a3b8">x</span>${rollRow(b.d, "d", b.a, false)}</div>
+    <div class="res" id="bRes" style="visibility:hidden">Atacante −${b.al} · Defensor −${b.dl}${b.conq ? " · 🏳️ Conquistado!" : ""}</div>`;
+  el.classList.add("on");
+  const dice = el.querySelectorAll(".die"); const finals = [...b.a, ...b.d];
+  let spins = 0;
+  const spin = setInterval(() => {
+    spins++;
+    dice.forEach((d, i) => { const n = spins < 7 ? roll() : finals[i]; d.querySelectorAll("i").forEach((p, j) => p.classList.toggle("v", PIPS[n].includes(j))); });
+    if (spins >= 7) {
+      clearInterval(spin);
+      dice.forEach(d => { d.classList.remove("rolling"); if (d.classList.contains("L")) d.classList.add("lose"); });
+      const r = $("bRes"); if (r) r.style.visibility = "visible";
+    }
+  }, 80);
+  clearTimeout(battleT); battleT = setTimeout(() => el.classList.remove("on"), 3200);
+}
+
+/* ================= RENDER ================= */
+let firstSnap = true;
+function render() {
+  if (!R) return show("home");
+  if (R.meta.status === "lobby") return renderLobby();
+  show("game"); fitMap(); renderGame();
+}
+function renderLobby() {
+  show("lobby");
+  $("lCode").textContent = roomCode;
+  const ps = Object.entries(R.players).sort((a, b) => a[1].joined - b[1].joined);
+  $("lCount").textContent = ps.length;
+  $("lPlayers").innerHTML = ps.map(([u, p]) => `<div class="pitem"><i class="dot" style="background:${COLORS[p.color].f}"></i><div>${esc(p.name)}${u === R.meta.host ? " 👑" : ""}${u === uid ? ' <span class="lbl">(você)</span>' : ""}</div><i class="on-dot ${p.online ? "" : "off"}"></i></div>`).join("");
+  const host = R.meta.host === uid;
+  $("bStart").style.display = host ? "" : "none";
+  $("bStart").disabled = ps.length < 2;
+  $("lWait").textContent = host ? (ps.length < 2 ? "Mande o código para seus amigos. Precisa de pelo menos 2 jogadores." : "Todos prontos? Comece quando quiser.") : "Aguardando o criador da sala começar a partida…";
+}
+function renderGame() {
+  const g = R.game; if (!g) return;
+  const me = uid, mine = cur(g) === me && !g.winner;
+  // batalha
+  if (g.battle && g.battle.ts !== lastBattleTs) { if (!firstSnap) showBattle(g.battle, g); lastBattleTs = g.battle.ts; }
+  firstSnap = false;
+  if (!mine || g.phase === "deploy") sel = null;
+  if (sel && g.owner[sel] !== me) sel = null;
+  // topo
+  $("gTitle").innerHTML = `Sala ${roomCode} <small>· Rodada ${g.round}</small>`;
+  $("gChips").innerHTML = g.order.map(u => {
+    const n = owned(g, u).length, tr = owned(g, u).reduce((s, t) => s + g.troops[t], 0);
+    const on = R.players[u] && R.players[u].online;
+    const pas = g.passive[u] || 0;
+    return `<div class="chip ${u === cur(g) && !g.winner ? "cur" : ""} ${g.elim[u] ? "dead" : ""}"><i class="dot" style="background:${COLORS[g.col[u]].f}"></i>${esc(g.names[u])}${u === me ? " (você)" : ""} · ${n}🏴 ${tr}⚔ ${(g.cards[u] || []).length}🃏${pas >= 5 ? ` ⚠️${pas}` : ""}${on ? "" : " 📴"}</div>`;
+  }).join("");
+  $("nCards").textContent = (g.cards[me] || []).length;
+  // banner
+  const cn = esc(g.names[cur(g)]); let txt = "", warn = "";
+  if (g.winner) txt = `🏆 <b>${esc(g.names[g.winner])}</b> venceu! Objetivo: ${esc(OBJ[g.obj[g.winner]].t)}`;
+  else if (g.elim[me]) txt = `Você foi eliminado. Assistindo… Vez de <b>${cn}</b>.`;
+  else if (!mine) txt = `Vez de <b>${cn}</b> · ${{deploy:"distribuindo tropas", attack:"atacando", move:"remanejando"}[g.phase]}`;
+  else if (g.phase === "deploy") txt = (g.cards[me].length >= 5) ? "Você tem 5 cartas: <b>troque 3</b> antes de distribuir (🃏)." : (g.reinf > 0 ? `Sua vez! Distribua <b>${g.reinf}</b> tropa(s): toque nos seus territórios.` : "Tropas distribuídas. Toque em <b>Atacar</b>.");
+  else if (g.phase === "attack") txt = sel ? `Atacando de <b>${esc(TI[sel].n)}</b>: toque num vizinho inimigo.` : "<b>Ataque:</b> toque num território seu com 2+ tropas.";
+  else txt = sel ? `Movendo de <b>${esc(TI[sel].n)}</b>: toque num vizinho seu.` : "<b>Remanejamento:</b> toque num território seu para mover tropas, ou encerre o turno.";
+  const pas = g.passive[me] || 0;
+  if (!g.winner && !g.elim[me] && pas >= 5) warn = pas >= PASSIVE_LIMIT ? `⚠️ ${pas} rodadas sem atacar: você está recebendo 1 tropa a menos por rodada. Ataque para zerar!` : `⚠️ ${pas} rodadas sem atacar. Com ${PASSIVE_LIMIT}, você passa a receber 1 tropa a menos.`;
+  $("gBanner").innerHTML = txt; $("gWarn").textContent = warn;
+  const nb = $("bNext");
+  if (g.winner) { nb.style.display = ""; nb.textContent = "Nova partida"; nb.disabled = false; }
+  else if (mine) { nb.style.display = ""; nb.textContent = {deploy:"Atacar ➜", attack:"Remanejar ➜", move:"Encerrar turno"}[g.phase]; nb.disabled = g.phase === "deploy" && (g.reinf > 0 || g.cards[me].length >= 5); }
+  else nb.style.display = "none";
+  // modais dependentes do estado
+  if (modalKind === "atk") renderAttack();
+  if (mine && g.conq && g.phase === "attack" && modalKind !== "conq") openConq(g.conq);
+  if (modalKind === "conq" && !g.conq) closeModal();
+  if (modalKind === "cards") openCards();
+  if (mine && g.phase === "deploy" && g.cards[me].length >= 5 && !modalKind) openCards();
+  paint();
+}
+setInterval(() => {
+  const g = R && R.game; if (!g || !R.meta || R.meta.status !== "playing") return;
+  if (g.winner) { $("gTimer").textContent = "fim"; $("gTimer").classList.remove("low"); return; }
+  const ms = Math.max(0, g.deadline - now()); const s = Math.ceil(ms / 1000);
+  $("gTimer").textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  $("gTimer").classList.toggle("low", s <= 20);
+  checkTimeout();
+}, 250);
+
+/* ================= BOTÕES ================= */
+$("bCreate").onclick = () => uid ? createRoom() : toast("Ainda conectando…");
+$("bJoin").onclick = () => uid ? joinRoom($("codeIn").value) : toast("Ainda conectando…");
+$("codeIn").addEventListener("keydown", e => { if (e.key === "Enter") $("bJoin").click(); });
+$("bShare").onclick = share;
+$("bStart").onclick = startGame;
+$("bLeaveLobby").onclick = leaveRoom;
+$("bMenu").onclick = openMenu;
+$("bCards").onclick = () => R && R.game && openCards();
+$("bObj").onclick = () => R && R.game && openObj();
+$("bConts").onclick = () => R && R.game && openConts();
+$("bLog").onclick = () => R && R.game && openLog();
+$("bNext").onclick = async () => {
+  const g = R.game;
+  if (g.winner) {
+    if (R.meta.host === uid) { await update(ref(db, `rooms/${roomCode}`), {"meta/status":"lobby", game:null}); }
+    else toast("O criador da sala pode iniciar uma nova partida.");
+    return;
+  }
+  sel = null; await aNext();
+};
+svg.on("click", () => { if (sel) { sel = null; paint(); renderGame(); } });
+
+/* ================= INÍCIO ================= */
+$("name").value = localStorage.getItem("cm_name") || "";
+const urlCode = new URLSearchParams(location.search).get("sala");
+if (urlCode) $("codeIn").value = urlCode.toUpperCase();
+buildMap();
+onAuthStateChanged(auth, async user => {
+  if (!user) { signInAnonymously(auth).catch(e => $("authMsg").textContent = "Erro ao conectar: " + e.message + " (o login Anônimo está ativado no Firebase?)"); return; }
+  uid = user.uid; $("authMsg").textContent = "Conectado ✔";
+  const saved = localStorage.getItem("cm_room");
+  const target = (urlCode || saved || "").toUpperCase();
+  if (target) {
+    try {
+      const s = await get(ref(db, `rooms/${target}/players/${uid}`));
+      if (s.exists()) { enterRoom(target); return; }
+      if (saved === target) localStorage.removeItem("cm_room");
+    } catch (e) { $("authMsg").textContent = "Erro ao acessar o banco: " + e.message; }
+  }
+});
+</script>
+</body>
+</html>
