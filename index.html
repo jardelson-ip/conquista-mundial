@@ -93,6 +93,13 @@ input{font:inherit}
 .die.rolling{animation:shake .12s infinite}
 @keyframes shake{0%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}100%{transform:rotate(-8deg)}}
 .res{font-size:14px;font-weight:700}
+#turnPop{position:absolute;inset:0;display:none;align-items:center;justify-content:center;z-index:6;background:rgba(15,23,42,.35)}
+#turnPop.on{display:flex}
+.tp-box{background:var(--acc);color:#2a1d00;border-radius:20px;padding:20px 30px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.4);animation:pop .35s ease-out;max-width:85%}
+.tp-box b{display:block;font-size:40px;font-weight:900;letter-spacing:3px;line-height:1.05}
+.tp-box span{display:block;font-size:17px;font-weight:700;margin-top:6px}
+.tp-box small{display:block;font-size:13px;font-weight:600;margin-top:6px;opacity:.8}
+@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.06)}100%{transform:scale(1);opacity:1}}
 #toast{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);background:#020617;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:50;display:none;max-width:90vw;text-align:center;border:1px solid var(--line)}
 #toast.on{display:block}
 .obj{font-size:16px;line-height:1.45;padding:14px;border-radius:12px;background:#2b2410;border:1px solid #5c4708}
@@ -151,6 +158,7 @@ input{font:inherit}
       <button id="zReset" aria-label="Centralizar" style="font-size:15px">⤢</button>
     </div>
     <div id="battle"></div>
+    <div id="turnPop"><div class="tp-box"><b>SUA VEZ</b><span id="tpSub"></span><small id="tpNote"></small></div></div>
   </div>
   <div class="bottom">
     <div class="banner" id="gBanner"></div>
@@ -227,14 +235,17 @@ const OBJ = {
   c5:{t:"Conquistar totalmente a América do Norte e a África.", c:["an","af"], x:0},
   c6:{t:"Conquistar totalmente a Ásia e a África.", c:["asi","af"], x:0},
   c7:{t:"Conquistar totalmente a América do Sul, a África e a Oceania.", c:["as","af","oc"], x:0},
-  t24:{t:"Conquistar 24 territórios à sua escolha.", n:24, m:1},
-  t18:{t:"Conquistar 18 territórios com pelo menos 2 tropas em cada um.", n:18, m:2},
+  t24:{t:"Conquistar {n} territórios à sua escolha.", n:24, m:1},
+  t18:{t:"Conquistar {n} territórios com pelo menos 2 tropas em cada um.", n:18, m:2},
   k0:{t:"Eliminar o jogador AZUL. Se outro jogador eliminá-lo antes, seu objetivo passa a ser conquistar 24 territórios.", k:0},
   k1:{t:"Eliminar o jogador VERMELHO. Se outro jogador eliminá-lo antes, seu objetivo passa a ser conquistar 24 territórios.", k:1},
   k2:{t:"Eliminar o jogador VERDE. Se outro jogador eliminá-lo antes, seu objetivo passa a ser conquistar 24 territórios.", k:2},
   k3:{t:"Eliminar o jogador ROXO. Se outro jogador eliminá-lo antes, seu objetivo passa a ser conquistar 24 territórios.", k:3}
 };
 
+// com 2 jogadores cada um já começa com 22 territórios, então as metas sobem
+const goalN = (g, k) => { const two = g.order.length === 2; return k === "t24" ? (two ? 32 : 24) : (two ? 28 : 18); };
+const objText = (g, u) => { const k = g.obj[u]; const o = OBJ[k]; if (!o) return ""; let t = o.t.replace("{n}", o.n ? goalN(g, k) : ""); if (o.k !== undefined) t = t.replace("24", goalN(g, "t24")); return t; };
 /* ================= FIREBASE ================= */
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -286,8 +297,12 @@ function objDone(g, u) {
     if (o.x) return Object.keys(CONT).some(c => !o.c.includes(c) && contOwner(g,c) === u);
     return true;
   }
-  if (o.n) return mine.filter(t => g.troops[t] >= o.m).length >= o.n;
+  if (o.n) return mine.filter(t => g.troops[t] >= o.m).length >= goalN(g, g.obj[u]);
   return false; // objetivos de eliminação são checados na eliminação
+}
+function winCheck(g, u) {
+  if (g.winner || g.elim[u]) return;
+  if (objDone(g, u)) { g.winner = u; g.conq = null; logp(g, `🏆 ${g.names[u]} completou o objetivo e venceu!`); }
 }
 function startTurn(g) {
   const u = cur(g);
@@ -304,7 +319,7 @@ function drawCard(g, u) {
 }
 function endTurn(g) {
   const u = cur(g);
-  g.passive[u] = g.attacked ? 0 : (g.passive[u] || 0) + 1;
+  if (g.round > 1) g.passive[u] = g.attacked ? 0 : (g.passive[u] || 0) + 1;
   if (g.conquered) drawCard(g, u);
   if (g.winner) return;
   let i = g.turnIdx, guard = 0;
@@ -350,6 +365,7 @@ async function act(fn) {
 }
 const myTurnCheck = (g, fail) => {
   if (g.winner) return fail("A partida acabou.");
+  if (g.started === false) return fail("Aguardando todos confirmarem o objetivo.");
   if (cur(g) !== uid) return fail("Não é a sua vez.");
   return true;
 };
@@ -361,6 +377,7 @@ function aPlace(t, n) {
     if (g.owner[t] !== uid) return fail("Território não é seu.");
     n = Math.min(n, g.reinf); if (n < 1) return fail("Sem tropas para distribuir.");
     g.troops[t] += n; g.reinf -= n;
+    winCheck(g, uid);
   });
 }
 function aNext() {
@@ -369,18 +386,29 @@ function aNext() {
     if (g.phase === "deploy") {
       if (g.cards[uid].length >= 5) return fail("Você tem 5 cartas: troque 3 primeiro.");
       if (g.reinf > 0) return fail(`Distribua as ${g.reinf} tropas restantes.`);
-      g.phase = "attack";
+      if (g.round === 1) enterMove(g); else g.phase = "attack";
     } else if (g.phase === "attack") {
-      g.phase = "move"; g.conq = null; g.movable = {};
-      owned(g,uid).forEach(t => { if (g.troops[t] > 1) g.movable[t] = g.troops[t] - 1; });
+      enterMove(g);
     } else {
       endTurn(g);
     }
   });
 }
+function enterMove(g) {
+  g.phase = "move"; g.conq = null; g.movable = {};
+  owned(g, cur(g)).forEach(t => { if (g.troops[t] > 1) g.movable[t] = g.troops[t] - 1; });
+}
+function aReady() {
+  return act((g, fail) => {
+    if (g.started !== false) return false;
+    g.ready = g.ready || {}; g.ready[uid] = true;
+    if (g.order.every(u => g.ready[u])) { g.started = true; g.deadline = now() + TURN_MS; logp(g, "✅ Todos confirmaram. Que comece a guerra!"); }
+  });
+}
 function aAttack(from, to, blitz) {
   return act((g, fail) => {
     if (myTurnCheck(g, fail) === false) return false;
+    if (g.round === 1) return fail("Ataques liberados só a partir da 2ª rodada.");
     if (g.phase !== "attack") return fail("Não é fase de ataque.");
     if (g.owner[from] !== uid) return fail("Origem não é sua.");
     if (g.owner[to] === uid) return fail("Esse território já é seu.");
@@ -408,8 +436,8 @@ function aAttack(from, to, blitz) {
       const max = Math.min(2, g.troops[from] - 1);
       g.conq = max > 0 ? {from, to, max} : null;
       if (owned(g, def).length === 0) eliminate(g, def, uid);
-      if (!g.winner && objDone(g, uid)) g.winner = uid;
       if (g.winner) { g.conq = null; logp(g, `🏆 ${g.names[g.winner]} completou o objetivo e venceu!`); }
+      else winCheck(g, uid);
     }
   });
 }
@@ -419,6 +447,7 @@ function aConqMove(n) {
     const c = g.conq; if (!c) return false;
     n = Math.max(0, Math.min(n, c.max, g.troops[c.from] - 1));
     g.troops[c.from] -= n; g.troops[c.to] += n; g.conq = null;
+    winCheck(g, uid);
   });
 }
 function aMove(from, to, n) {
@@ -430,6 +459,7 @@ function aMove(from, to, n) {
     const m = Math.min(g.movable[from] || 0, g.troops[from] - 1);
     if (n < 1 || n > m) return fail("Quantidade inválida.");
     g.troops[from] -= n; g.troops[to] += n; g.movable[from] = (g.movable[from] || 0) - n;
+    winCheck(g, uid);
   });
 }
 function aTrade(idxs) {
@@ -448,11 +478,18 @@ function aTrade(idxs) {
     const own = cs.find(c => c.t !== "*" && g.owner[c.t] === uid);
     if (own) { g.troops[own.t] += 2; extra = ` +2 em ${TI[own.t].n}`; }
     logp(g, `🃏 ${g.names[uid]} trocou cartas e recebeu ${v} tropas${extra}`);
+    winCheck(g, uid);
   });
 }
 let lastTimeoutTry = 0;
 function checkTimeout() {
   const g = R && R.game; if (!g || g.winner) return;
+  if (g.started === false) {
+    if (!g.readyBy || now() < g.readyBy || Date.now() - lastTimeoutTry < 4000) return;
+    lastTimeoutTry = Date.now();
+    act(g2 => { if (g2.started !== false || now() < g2.readyBy) return false; g2.started = true; g2.deadline = now() + TURN_MS; logp(g2, "⏱ Tempo de confirmação esgotado: partida iniciada."); });
+    return;
+  }
   if (now() < g.deadline + 1500) return;
   if (Date.now() - lastTimeoutTry < 4000) return;
   lastTimeoutTry = Date.now();
@@ -513,15 +550,20 @@ function leaveListeners() { if (unsubRoom) unsubRoom(); if (unsubConn) unsubConn
 async function leaveRoom() {
   const code = roomCode;
   if (code && R && R.meta && R.meta.status === "lobby" && R.players && R.players[uid]) {
-    await set(ref(db, `rooms/${code}/players/${uid}`), null);
+    const others = Object.keys(R.players).filter(u => u !== uid);
+    const upd = {[`players/${uid}`]: null};
+    if (R.meta.host === uid) upd["meta/host"] = others[0] || null;
+    if (!others.length) { await set(ref(db, `rooms/${code}`), null); } else await update(ref(db, `rooms/${code}`), upd);
   } else if (code) { set(ref(db, `rooms/${code}/players/${uid}/online`), false); }
   leaveListeners(); roomCode = null; R = null; localStorage.removeItem("cm_room");
   history.replaceState(null, "", location.pathname);
   closeModal(); show("home");
 }
+let starting = false;
 async function startGame() {
   const ps = R.players; const uids = Object.keys(ps);
   if (uids.length < 2) return toast("Precisa de pelo menos 2 jogadores.");
+  if (R.game || starting) return; starting = true; setTimeout(() => starting = false, 4000);
   const order = shuffle(uids);
   const g = { order, turnIdx:0, round:1, owner:{}, troops:{}, names:{}, col:{}, obj:{}, cards:{}, passive:{}, elim:{}, log:[], deck:[], discard:[], trades:0, winner:null };
   uids.forEach(u => { g.names[u] = ps[u].name; g.col[u] = ps[u].color; g.cards[u] = []; g.passive[u] = 0; });
@@ -536,17 +578,34 @@ async function startGame() {
   norm(g);
   logp(g, "🌍 A partida começou! Ordem: " + order.map(u => g.names[u]).join(" → "));
   startTurn(g);
+  g.started = false; g.ready = {}; g.readyBy = now() + 90000;
+  logp(g, "🎯 Cada jogador confirma o seu objetivo secreto para começar (1ª rodada sem ataques)");
   await update(ref(db, `rooms/${roomCode}`), {"meta/status":"playing", game:g});
 }
 
 /* ================= MAPA ================= */
-const W = 680, H = 400;
-const svg = d3.select("#map");
+// Projeção "de tabuleiro": meridianos retos, Europa/África ampliadas, oceanos e polos encolhidos
+const XB = [[-180,.35],[-170,1.15],[-52,.55],[-22,1.75],[44,1.15],[150,.5],[180,0]];
+const YB = [[-60,1.15],[-35,1.1],[10,1.3],[35,2.1],[62,1.5],[72,.7],[90,0]];
+function pw(B, v) {
+  if (v <= B[0][0]) return (v - B[0][0]) * B[0][1];
+  let acc = 0;
+  for (let i = 0; i < B.length - 1; i++) { const a = B[i][0], w = B[i][1], b = B[i+1][0]; if (v <= b) return acc + (v - a) * w; acc += (b - a) * w; }
+  return acc + (v - B[B.length-1][0]) * B[B.length-2][1];
+}
+const RAD = 180 / Math.PI;
+const boardRaw = (l, p) => [pw(XB, l * RAD), pw(YB, p * RAD)];
+const LAT_TOP = 83, LAT_BOT = -57;
+const W = 680;
+const proj = d3.geoProjection(boardRaw).scale(W / pw(XB, 180)).translate([0, 0]);
+{ const a = proj([-179.9999, 0]), b = proj([0, LAT_TOP]); proj.translate([-a[0], -b[1] + 6]); }
+const H = Math.ceil(proj([0, LAT_BOT])[1] + 6);
+const svg = d3.select("#map").attr("viewBox", `0 0 ${W} ${H}`);
 const gRoot = svg.append("g");
 const defs = svg.append("defs");
-const proj = d3.geoMercator().scale(W / (2 * Math.PI)).translate([W/2, 0]);
-proj.translate([W/2, -proj([0, 80])[1] + 4]);
 const gpath = d3.geoPath(proj);
+let P = {}; T.forEach(t => P[t[0]] = proj([t[3], t[4]]));
+let pxPerUnit = 0.6;
 let landSel = null, nodeSel = null, mapReady = false, zoomK = 1;
 const zoom = d3.zoom().scaleExtent([1, 10]).translateExtent([[0,0],[W,H]]).on("zoom", e => { gRoot.attr("transform", e.transform); zoomK = e.transform.k; scaleMarks(); });
 svg.call(zoom).on("dblclick.zoom", null);
@@ -559,6 +618,7 @@ function fitMap() {
   const key = Math.round(r.width) + "x" + Math.round(r.height); if (key === lastBox) return; lastBox = key;
   const Wv = Math.max(W, H * r.width / r.height), Hv = Math.max(H, W * r.height / r.width);
   svg.attr("viewBox", `0 0 ${Wv} ${Hv}`);
+  pxPerUnit = r.width / Wv;
   zoom.extent([[0,0],[Wv,Hv]]);
   svg.call(zoom.scaleTo, zoomK || 1);
 }
@@ -616,7 +676,7 @@ async function buildMap() {
   };
   splitLine("Russia",100,40,85,bord); splitLine("Canada",-95,40,85,bord); splitLine("United States of America",-100,24,50,bord);
   // fronteiras entre continentes (escuras e grossas)
-  const cb = gRoot.append("g").attr("fill", "none").attr("stroke", "#1e293b").attr("stroke-linejoin", "round").attr("opacity", .75).attr("class", "b2");
+  const cb = gRoot.append("g").attr("fill", "none").attr("stroke", "#0b1220").attr("stroke-linejoin", "round").attr("stroke-linecap", "round").attr("opacity", .9).attr("class", "b2");
   cb.append("path").datum(topojson.mesh(w, w.objects.countries, (a,b) => a !== b && contOf(a) !== "ru" && contOf(b) !== "ru" && contOf(a) !== contOf(b))).attr("d", gpath);
   const isRu = f => f.properties.name === "Russia";
   cb.append("path").datum(topojson.mesh(w, w.objects.countries, (a,b) => a !== b && (isRu(a) || isRu(b)) && contOf(isRu(a) ? b : a) !== "eu")).attr("d", gpath).attr("clip-path", clipRect(-160, 60, -85, 85));
@@ -625,7 +685,11 @@ async function buildMap() {
   // litoral
   gRoot.append("path").datum(topojson.mesh(w, w.objects.countries, (a,b) => a === b)).attr("d", gpath).attr("fill", "none").attr("stroke", "#3f6382").attr("class", "b3");
   // rotas marítimas
-  const P = {}; T.forEach(t => P[t[0]] = proj([t[3], t[4]]));
+  // nome sutil de cada continente
+  const CLBL = {an:[-104,47,"AMÉRICA DO NORTE"], as:[-60,-26,"AMÉRICA DO SUL"], eu:[10,60,"EUROPA"], af:[14,3,"ÁFRICA"], asi:[96,55,"ÁSIA"], oc:[124,-20,"OCEANIA"]};
+  gRoot.append("g").attr("class", "cl").attr("pointer-events", "none").selectAll("text").data(Object.keys(CLBL)).join("text")
+    .attr("x", c => proj(CLBL[c])[0]).attr("y", c => proj(CLBL[c])[1]).attr("text-anchor", "middle").attr("dominant-baseline", "central")
+    .attr("fill", "#0b1220").attr("font-weight", 800).attr("font-family", "system-ui,sans-serif").attr("letter-spacing", 2).text(c => CLBL[c][2]);
   const sea = gRoot.append("g").attr("stroke", "#ffffff").attr("stroke-dasharray", "4 4").attr("opacity", .75).attr("fill", "none").attr("class", "sea");
   SEA.forEach(k => { const [a,b] = k.split("-"); sea.append("line").attr("x1", P[a][0]).attr("y1", P[a][1]).attr("x2", P[b][0]).attr("y2", P[b][1]); });
   sea.append("line").attr("x1", P.alasca[0]).attr("y1", P.alasca[1]).attr("x2", 2).attr("y2", P.alasca[1]);
@@ -634,24 +698,45 @@ async function buildMap() {
   nodeSel = gRoot.append("g").selectAll("g").data(TIDS).join("g").attr("transform", t => `translate(${P[t]})`).style("cursor", "pointer");
   nodeSel.append("circle").attr("class", "bub");
   nodeSel.append("text").attr("class", "num").attr("text-anchor", "middle").attr("dominant-baseline", "central").attr("font-weight", 800).attr("font-family", "system-ui,sans-serif");
-  nodeSel.append("text").attr("class", "lbl").attr("text-anchor", "middle").attr("fill", "#0f172a").attr("paint-order", "stroke").attr("stroke", "#ffffff").attr("stroke-linejoin", "round").attr("font-weight", 600).attr("font-family", "system-ui,sans-serif").text(t => TI[t].n);
+  nodeSel.append("text").attr("class", "tn").attr("text-anchor", "middle").attr("dominant-baseline", "hanging").attr("fill", "#0f172a").attr("paint-order", "stroke").attr("stroke", "rgba(255,255,255,.85)").attr("stroke-linejoin", "round").attr("font-weight", 600).attr("font-family", "system-ui,sans-serif").text(t => TI[t].n);
   landSel.on("click", function (e) { e.stopPropagation(); onTerr(this.getAttribute("data-t")); });
   nodeSel.on("click", (e, t) => { e.stopPropagation(); onTerr(t); });
   mapReady = true; $("mapLoading").style.display = "none";
   scaleMarks(); paint();
 }
-let labelsFor = new Set();
+let labelsFor = new Set(), cullRaf = 0;
+// tamanhos definidos em pixels de tela, para ficarem iguais no celular e no computador
 function scaleMarks() {
   if (!mapReady) return;
-  const k = zoomK, s = 1 / Math.pow(k, 0.7);
-  nodeSel.select(".bub").attr("r", 8 * s).attr("stroke-width", 1.8 * s);
-  nodeSel.select(".num").attr("font-size", 9 * s);
-  nodeSel.select(".lbl").attr("font-size", 10 / k).attr("y", 8 * s + 10 / k).attr("stroke-width", 2.8 / k)
-    .attr("display", t => (k >= 1.8 || labelsFor.has(t)) ? null : "none");
-  gRoot.select(".b1").attr("stroke-width", 1 / Math.sqrt(k));
-  gRoot.select(".b2").attr("stroke-width", 2.2 / Math.sqrt(k));
-  gRoot.select(".b3").attr("stroke-width", .6 / Math.sqrt(k));
-  gRoot.select(".sea").attr("stroke-width", 1 / k);
+  const k = zoomK, u = px => px / (pxPerUnit * k);
+  const rPx = Math.min(11, 6.5 * Math.pow(k, .3));
+  nodeSel.select(".bub").attr("r", u(rPx)).attr("stroke-width", u(1.4));
+  nodeSel.select(".num").attr("font-size", u(rPx * 1.12));
+  const fPx = Math.min(10, 6 * Math.pow(k, .28));
+  nodeSel.select(".tn").attr("font-size", u(fPx)).attr("y", u(rPx + 1.5)).attr("stroke-width", u(2));
+  gRoot.select(".b1").attr("stroke-width", u(.9));
+  gRoot.select(".b2").attr("stroke-width", u(2.6));
+  gRoot.select(".b3").attr("stroke-width", u(.6));
+  gRoot.select(".sea").attr("stroke-width", u(1)).attr("stroke-dasharray", `${u(3)} ${u(3)}`);
+  gRoot.select(".cl").selectAll("text").attr("font-size", u(Math.min(30, 11 * Math.pow(k, .6)))).attr("opacity", k < 2.2 ? .17 : Math.max(0, .17 - (k - 2.2) * .06));
+  cancelAnimationFrame(cullRaf); cullRaf = requestAnimationFrame(cullLabels);
+}
+// esconde nomes que ficariam por cima de outros (os do território selecionado têm prioridade)
+function cullLabels() {
+  if (!mapReady) return;
+  const tr = d3.zoomTransform(svg.node()), k = tr.k, f = pxPerUnit;
+  const rPx = Math.min(11, 6.5 * Math.pow(k, .3)), fPx = Math.min(10, 6 * Math.pow(k, .28));
+  const sp = t => [(P[t][0] * k + tr.x) * f, (P[t][1] * k + tr.y) * f];
+  const boxes = TIDS.map(t => { const [x, y] = sp(t); return [x - rPx, y - rPx, x + rPx, y + rPx, t]; });
+  const hit = (b) => boxes.some(o => !(b[2] < o[0] || b[0] > o[2] || b[3] < o[1] || b[1] > o[3]) && o[4] !== b[4]);
+  const prio = [...labelsFor, ...TIDS.filter(t => !labelsFor.has(t))];
+  const vis = new Set();
+  prio.forEach(t => {
+    const [x, y] = sp(t); const w = TI[t].n.length * fPx * .56;
+    const b = [x - w / 2, y + rPx + 1.5, x + w / 2, y + rPx + 1.5 + fPx, t];
+    if (labelsFor.has(t) || !hit(b)) { vis.add(t); boxes.push(b); }
+  });
+  nodeSel.select(".tn").attr("display", t => vis.has(t) ? null : "none");
 }
 let prevOwner = {};
 function paint() {
@@ -659,7 +744,9 @@ function paint() {
   const g = R && R.game;
   const cand = candidates();
   labelsFor = new Set(sel ? [sel, ...cand] : []);
-  const dim = !!sel;
+  const deployMine = g && !g.winner && g.started !== false && cur(g) === uid && g.phase === "deploy" && g.reinf > 0;
+  if (deployMine) owned(g, uid).forEach(t => cand.push(t));
+  const dim = !!sel || deployMine;
   landSel.each(function () {
     const t = this.getAttribute("data-t"); const el = d3.select(this);
     const o = g && g.owner[t]; const col = o ? COLORS[g.col[o]].f : "#d6d3c4";
@@ -695,7 +782,7 @@ function terrInfo(t) {
 }
 function onTerr(t) {
   const g = R && R.game; if (!g) return;
-  if (g.winner || cur(g) !== uid) { terrInfo(t); return; }
+  if (g.winner || g.started === false || cur(g) !== uid) { terrInfo(t); return; }
   const mine = g.owner[t] === uid;
   if (g.phase === "deploy") {
     if (!mine) return terrInfo(t);
@@ -729,7 +816,16 @@ function onTerr(t) {
 let modalKind = null;
 function openModal(html, kind) { $("sheet").innerHTML = html; $("modal").classList.add("on"); modalKind = kind || "x"; }
 function closeModal() { $("modal").classList.remove("on"); modalKind = null; atk = null; }
-$("modal").addEventListener("click", e => { if (e.target.id === "modal" && modalKind !== "conq") closeModal(); });
+$("modal").addEventListener("click", e => { if (e.target.id === "modal" && modalKind !== "conq" && modalKind !== "ready") closeModal(); });
+function openReady() {
+  const g = R.game; const c = COLORS[g.col[uid]];
+  openModal(`<h3>🎯 Seu objetivo secreto</h3>
+    <div class="lbl">Você joga com a cor <b style="color:${c.f}">${c.n.toUpperCase()}</b>.</div>
+    <div class="obj">${esc(objText(g, uid))}</div>
+    <div class="lbl">Guarde segredo! Você pode rever o objetivo a qualquer momento no botão 🎯. Na 1ª rodada ninguém ataca: aproveite para se fortalecer.</div>
+    <button class="btn pri" id="rOk">Entendi, estou pronto!</button>`, "ready");
+  $("rOk").onclick = async () => { $("rOk").disabled = true; closeModal(); await aReady(); };
+}
 function stepper(title, max, def, onOk, sub) {
   let v = Math.max(1, Math.min(def, max));
   openModal(`<h3>${esc(title)}</h3><div class="lbl">${esc(sub || "")}</div>
@@ -795,8 +891,8 @@ function openCards() {
 function openObj() {
   const g = R.game; const k = g.obj[uid];
   let extra = "";
-  if (g.winner) extra = "<h3>Objetivos de todos</h3><div class='list'>" + g.order.map(u => `<div class="it"><i class="dot" style="background:${COLORS[g.col[u]].f}"></i><div><b>${esc(g.names[u])}</b><br><span class="lbl">${esc(OBJ[g.obj[u]].t)}</span></div></div>`).join("") + "</div>";
-  openModal(`<h3>🎯 Seu objetivo secreto</h3><div class="obj">${k ? esc(OBJ[k].t) : "Você está assistindo esta partida."}</div>
+  if (g.winner) extra = "<h3>Objetivos de todos</h3><div class='list'>" + g.order.map(u => `<div class="it"><i class="dot" style="background:${COLORS[g.col[u]].f}"></i><div><b>${esc(g.names[u])}</b><br><span class="lbl">${esc(objText(g, u))}</span></div></div>`).join("") + "</div>";
+  openModal(`<h3>🎯 Seu objetivo secreto</h3><div class="obj">${k ? esc(objText(g, uid)) : "Você está assistindo esta partida."}</div>
     <div class="lbl">Não mostre para ninguém! Ao completar, você vence na hora.</div>${extra}
     <button class="btn" id="oClose">Fechar</button>`, "obj");
   $("oClose").onclick = closeModal;
@@ -829,6 +925,7 @@ function openMenu() {
 function openHelp() {
   openModal(`<h3>Como jogar</h3><div class="list" style="font-size:13px;line-height:1.45">
   <div class="it">1. <b>Distribuir:</b> no início do turno você recebe tropas (metade dos seus territórios, mínimo 3, + bônus de continentes dominados). Toque nos seus territórios para colocá-las.</div>
+  <div class="it">🕊️ <b>1ª rodada:</b> ninguém ataca, só distribui e remaneja. Os ataques começam na 2ª rodada.</div>
   <div class="it">2. <b>Atacar:</b> toque num território seu com 2+ tropas e depois num vizinho inimigo. Cada lado rola até 3 dados; eles se enfrentam 1 contra 1 e cada derrota tira 1 soldado. Empate: defensor vence.</div>
   <div class="it">3. <b>Remanejar:</b> mova tropas entre territórios seus vizinhos. Depois, encerre o turno.</div>
   <div class="it">🃏 Conquistou pelo menos 1 território no turno? Ganha uma carta. 3 cartas viram tropas (4, 6, 8, 10, 12, 15…).</div>
@@ -875,7 +972,15 @@ function showBattle(b, g) {
 }
 
 /* ================= RENDER ================= */
-let firstSnap = true;
+let firstSnap = true, lastTurnKey = "", popT = null;
+function showTurnPop(g) {
+  $("tpSub").textContent = `Distribua suas ${g.reinf} tropa${g.reinf > 1 ? "s" : ""}`;
+  $("tpNote").textContent = g.round === 1 ? "1ª rodada: ainda não há ataques" : ((g.passive[uid] || 0) >= PASSIVE_LIMIT ? "⚠️ Você recebeu 1 tropa a menos por não atacar" : "");
+  $("turnPop").classList.add("on");
+  try { navigator.vibrate && navigator.vibrate([180, 90, 180]); } catch (e) {}
+  clearTimeout(popT); popT = setTimeout(() => $("turnPop").classList.remove("on"), 2800);
+}
+$("turnPop").onclick = () => $("turnPop").classList.remove("on");
 function render() {
   if (!R) return show("home");
   if (R.meta.status === "lobby") return renderLobby();
@@ -895,6 +1000,14 @@ function renderLobby() {
 function renderGame() {
   const g = R.game; if (!g) return;
   const me = uid, mine = cur(g) === me && !g.winner;
+  // aviso de vez
+  const turnKey = g.started === false ? "wait" : g.round + ":" + g.turnIdx;
+  if (mine && g.started !== false && turnKey !== lastTurnKey && g.phase === "deploy" && g.reinf > 0) showTurnPop(g);
+  lastTurnKey = turnKey;
+  // confirmação do objetivo
+  if (g.started === false && !g.winner) {
+    if (!(g.ready || {})[uid] && modalKind !== "ready") openReady();
+  } else if (modalKind === "ready") closeModal();
   // batalha
   if (g.battle && g.battle.ts !== lastBattleTs) { if (!firstSnap) showBattle(g.battle, g); lastBattleTs = g.battle.ts; }
   firstSnap = false;
@@ -911,10 +1024,12 @@ function renderGame() {
   $("nCards").textContent = (g.cards[me] || []).length;
   // banner
   const cn = esc(g.names[cur(g)]); let txt = "", warn = "";
-  if (g.winner) txt = `🏆 <b>${esc(g.names[g.winner])}</b> venceu! Objetivo: ${esc(OBJ[g.obj[g.winner]].t)}`;
+  const waitList = g.started === false ? g.order.filter(u => !(g.ready || {})[u]).map(u => esc(g.names[u])) : [];
+  if (g.started === false && !g.winner) txt = `🎯 Aguardando confirmarem o objetivo: <b>${waitList.join(", ")}</b>`;
+  else if (g.winner) txt = `🏆 <b>${esc(g.names[g.winner])}</b> venceu! Objetivo: ${esc(objText(g, g.winner))}`;
   else if (g.elim[me]) txt = `Você foi eliminado. Assistindo… Vez de <b>${cn}</b>.`;
   else if (!mine) txt = `Vez de <b>${cn}</b> · ${{deploy:"distribuindo tropas", attack:"atacando", move:"remanejando"}[g.phase]}`;
-  else if (g.phase === "deploy") txt = (g.cards[me].length >= 5) ? "Você tem 5 cartas: <b>troque 3</b> antes de distribuir (🃏)." : (g.reinf > 0 ? `Sua vez! Distribua <b>${g.reinf}</b> tropa(s): toque nos seus territórios.` : "Tropas distribuídas. Toque em <b>Atacar</b>.");
+  else if (g.phase === "deploy") txt = (g.cards[me].length >= 5) ? "Você tem 5 cartas: <b>troque 3</b> antes de distribuir (🃏)." : (g.reinf > 0 ? `Sua vez! Distribua <b>${g.reinf}</b> tropa(s): toque nos seus territórios.${g.round === 1 ? " (1ª rodada: sem ataques)" : ""}` : (g.round === 1 ? "Tropas distribuídas. Toque em <b>Remanejar</b> (1ª rodada não tem ataque)." : "Tropas distribuídas. Toque em <b>Atacar</b>."));
   else if (g.phase === "attack") txt = sel ? `Atacando de <b>${esc(TI[sel].n)}</b>: toque num vizinho inimigo.` : "<b>Ataque:</b> toque num território seu com 2+ tropas.";
   else txt = sel ? `Movendo de <b>${esc(TI[sel].n)}</b>: toque num vizinho seu.` : "<b>Remanejamento:</b> toque num território seu para mover tropas, ou encerre o turno.";
   const pas = g.passive[me] || 0;
@@ -922,19 +1037,21 @@ function renderGame() {
   $("gBanner").innerHTML = txt; $("gWarn").textContent = warn;
   const nb = $("bNext");
   if (g.winner) { nb.style.display = ""; nb.textContent = "Nova partida"; nb.disabled = false; }
-  else if (mine) { nb.style.display = ""; nb.textContent = {deploy:"Atacar ➜", attack:"Remanejar ➜", move:"Encerrar turno"}[g.phase]; nb.disabled = g.phase === "deploy" && (g.reinf > 0 || g.cards[me].length >= 5); }
+  else if (g.started === false) nb.style.display = "none";
+  else if (mine) { nb.style.display = ""; nb.textContent = {deploy: g.round === 1 ? "Remanejar ➜" : "Atacar ➜", attack:"Remanejar ➜", move:"Encerrar turno"}[g.phase]; nb.disabled = g.phase === "deploy" && (g.reinf > 0 || g.cards[me].length >= 5); }
   else nb.style.display = "none";
   // modais dependentes do estado
   if (modalKind === "atk") renderAttack();
   if (mine && g.conq && g.phase === "attack" && modalKind !== "conq") openConq(g.conq);
   if (modalKind === "conq" && !g.conq) closeModal();
   if (modalKind === "cards") openCards();
-  if (mine && g.phase === "deploy" && g.cards[me].length >= 5 && !modalKind) openCards();
+  if (mine && g.started !== false && g.phase === "deploy" && g.cards[me].length >= 5 && !modalKind) openCards();
   paint();
 }
 setInterval(() => {
   const g = R && R.game; if (!g || !R.meta || R.meta.status !== "playing") return;
   if (g.winner) { $("gTimer").textContent = "fim"; $("gTimer").classList.remove("low"); return; }
+  if (g.started === false) { const w = Math.max(0, Math.ceil((g.readyBy - now()) / 1000)); $("gTimer").textContent = "⏳ " + w + "s"; $("gTimer").classList.remove("low"); checkTimeout(); return; }
   const ms = Math.max(0, g.deadline - now()); const s = Math.ceil(ms / 1000);
   $("gTimer").textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
   $("gTimer").classList.toggle("low", s <= 20);
