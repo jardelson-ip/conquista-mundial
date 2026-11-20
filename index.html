@@ -6,6 +6,8 @@
 <meta name="theme-color" content="#0f172a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Conquista Mundial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0f172a;--panel:#111a2e;--panel2:#1a2540;--line:#2a3654;--txt:#e5e7eb;--mut:#94a3b8;--acc:#f5b700;--ok:#22c55e;--bad:#ef4444}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -15,7 +17,7 @@ input{font:inherit}
 .screen{position:fixed;inset:0;display:none;flex-direction:column}
 .screen.on{display:flex}
 .center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:14px;overflow:auto}
-.logo{font-size:34px;font-weight:800;letter-spacing:.5px;text-align:center;line-height:1.1}
+.logo{font-family:Fredoka,system-ui,sans-serif;font-size:38px;font-weight:700;letter-spacing:.5px;text-align:center;line-height:1.1}
 .logo span{color:var(--acc)}
 .sub{color:var(--mut);font-size:14px;text-align:center;max-width:320px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;width:100%;max-width:360px;display:flex;flex-direction:column;gap:10px}
@@ -48,7 +50,7 @@ input{font:inherit}
 .chip.cur{border-color:var(--acc)}
 .chip.dead{opacity:.4;text-decoration:line-through}
 .chip .dot{width:11px;height:11px;border-width:1.5px}
-#mapbox{flex:1;position:relative;overflow:hidden;min-height:0;background:#9cc9e8}
+#mapbox{flex:1;position:relative;overflow:hidden;min-height:0;background:#3f9be0}
 #map{width:100%;height:100%;display:block;touch-action:none}
 .zoom{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:6px}
 .zoom button{width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.92);color:#0f172a;font-size:20px;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.25)}
@@ -79,7 +81,21 @@ input{font:inherit}
 .list .it{padding:9px 11px;background:var(--panel2);border-radius:10px;display:flex;align-items:center;gap:8px}
 .list .it .r{margin-left:auto;color:var(--mut);font-size:13px}
 /* battle overlay */
-#battle{position:absolute;left:50%;top:10px;transform:translateX(-50%);background:rgba(15,23,42,.94);border:1px solid var(--line);border-radius:14px;padding:10px 14px;display:none;flex-direction:column;gap:6px;align-items:center;z-index:5;min-width:250px;pointer-events:none}
+#battle{position:fixed;left:50%;top:max(110px,calc(env(safe-area-inset-top) + 100px));z-index:30;transform:translateX(-50%);background:rgba(15,23,42,.96);border:1px solid var(--line);border-radius:18px;padding:14px 16px;display:none;flex-direction:column;gap:10px;align-items:center;width:min(340px,92%);pointer-events:none;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.duel{display:flex;align-items:stretch;justify-content:center;gap:10px;width:100%}
+.dside{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 6px;border-radius:14px;border:2px solid var(--line);background:var(--panel2);transition:all .3s}
+.dside .who{font-weight:800;font-size:14px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dside .where{font-size:11px;color:var(--mut)}
+.dside .out{font-size:13px;font-weight:800;min-height:18px}
+.dside.win{border-color:#22c55e;background:#0f2e1c}
+.dside.win .out{color:#4ade80}
+.dside.lose{border-color:#ef4444;background:#3a1212}
+.dside.lose .out{color:#f87171}
+.vsx{align-self:center;font-weight:900;color:var(--acc);font-size:18px}
+.die.big{width:62px;height:62px;padding:8px;border-radius:12px}
+.die.big i{width:11px;height:11px}
+.die.q{display:flex;align-items:center;justify-content:center;font-size:30px;color:#111827;animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.55}}
 #battle.on{display:flex}
 #battle .bt{font-size:12px;color:var(--mut);text-align:center}
 .drow{display:flex;gap:6px;align-items:center}
@@ -108,6 +124,41 @@ input{font:inherit}
 .quick::-webkit-scrollbar{display:none}
 .quick button{flex:none;padding:7px 11px;border-radius:999px;background:var(--panel2);font-size:13px;border:1px solid var(--line)}
 .badge{display:inline-block;min-width:17px;padding:1px 5px;border-radius:999px;background:#dc2626;color:#fff;font-size:11px;font-weight:700;margin-left:3px;vertical-align:top}
+/* dado 3D */
+#diceLayer{position:fixed;inset:0;pointer-events:none;z-index:40;perspective:800px}
+.dw{position:absolute;left:0;top:0;width:54px;height:54px;will-change:transform}
+.dshadow{position:absolute;left:5px;top:50px;width:44px;height:11px;border-radius:50%;background:rgba(0,0,0,.4);filter:blur(3px)}
+.cube{width:54px;height:54px;position:relative;transform-style:preserve-3d}
+.face{position:absolute;inset:0;border-radius:11px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:8px;box-shadow:inset 0 0 0 2px rgba(0,0,0,.28),inset 0 -4px 0 rgba(0,0,0,.15);backface-visibility:hidden}
+.cube.a .face{background:#e11d2e}.cube.a .face i{background:#fff}
+.cube.d .face{background:#f8fafc}.cube.d .face i{background:#111}
+.face i{width:9px;height:9px;border-radius:50%;place-self:center;visibility:hidden}.face i.v{visibility:visible}
+.f1{transform:translateZ(27px)}.f6{transform:rotateY(180deg) translateZ(27px)}.f3{transform:rotateY(90deg) translateZ(27px)}.f4{transform:rotateY(-90deg) translateZ(27px)}.f5{transform:rotateX(90deg) translateZ(27px)}.f2{transform:rotateX(-90deg) translateZ(27px)}
+.dnum{position:absolute;left:50%;top:-38px;transform:translateX(-50%) scale(.4);font:700 32px Fredoka,system-ui,sans-serif;color:#fff;text-shadow:0 3px 0 #000,0 0 8px rgba(0,0,0,.8);opacity:0;transition:all .25s cubic-bezier(.3,1.6,.5,1)}
+.dnum.on{opacity:1;transform:translateX(-50%) scale(1)}
+/* cabeçalho do ataque */
+.bh{font:600 16px Fredoka,system-ui,sans-serif;text-align:center}
+.bs{font-size:13px;color:var(--mut);text-align:center;margin-top:-6px}
+.score{display:flex;align-items:center;justify-content:center;gap:12px;font:700 30px Fredoka,system-ui,sans-serif}
+.score .sv{min-width:48px;text-align:center;padding:2px 10px;border-radius:12px;background:var(--panel2);border:2px solid var(--line);transition:all .25s}
+.score .sv.win{border-color:#22c55e;background:#0f2e1c;color:#4ade80}
+.score .sv.lose{border-color:#ef4444;background:#3a1212;color:#f87171}
+.verdict{font:700 15px Fredoka,system-ui,sans-serif;text-align:center;letter-spacing:.5px}
+/* telas grandes (sua vez, continente, ordem) */
+#bigPop{position:fixed;inset:0;z-index:45;display:none;align-items:center;justify-content:center;background:rgba(2,6,23,.72);padding:18px;backdrop-filter:blur(2px)}
+#bigPop.on{display:flex}
+.bp{width:min(420px,100%);max-height:92vh;overflow:auto;background:linear-gradient(180deg,#1e293b,#0f172a);border:3px solid var(--acc);border-radius:24px;padding:20px 18px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.6);animation:pop .4s ease-out;display:flex;flex-direction:column;gap:12px}
+.bp-title{font:700 46px/1 Fredoka,system-ui,sans-serif;color:var(--acc);letter-spacing:2px;text-shadow:0 4px 0 #6b4f00}
+.bp-sub{font:600 20px Fredoka,system-ui,sans-serif}
+.bp-sub b{color:var(--acc);font-size:26px}
+.bp-small{font-size:13px;color:var(--mut)}
+.bp-box{background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:14px;padding:10px 12px;text-align:left;font-size:14px;display:flex;flex-direction:column;gap:6px}
+.bp-box h4{margin:0;font:600 14px Fredoka,system-ui,sans-serif;color:var(--acc)}
+.bar{height:12px;border-radius:999px;background:#0b1222;border:1px solid var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,#f5b700,#22c55e);border-radius:999px}
+.chk{display:flex;gap:6px;align-items:center;font-size:13px}
+.minicard{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:10px;background:#2b2410;border:1px solid #5c4708;font-weight:600}
+.bp .btn{font:700 18px Fredoka,system-ui,sans-serif;padding:14px}
 #toast{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);background:#020617;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:50;display:none;max-width:90vw;text-align:center;border:1px solid var(--line)}
 #toast.on{display:block}
 .obj{font-size:16px;line-height:1.45;padding:14px;border-radius:12px;background:#2b2410;border:1px solid #5c4708}
@@ -186,6 +237,8 @@ input{font:inherit}
 
 <div class="back" id="modal"><div class="sheet" id="sheet"></div></div>
 <div id="toast"></div>
+<div id="diceLayer"></div>
+<div id="bigPop"><div class="bp" id="bigBox"></div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
@@ -204,7 +257,8 @@ const firebaseConfig = {
   messagingSenderId: "665723143522",
   appId: "1:665723143522:web:4f38528322851e9889d83b"
 };
-const TURN_MS = 120000;          // 2 minutos por turno
+const TURN_MS = 180000;          // 3 minutos por turno
+const DEF_MS = 15000;            // tempo para o defensor jogar o dado
 const PASSIVE_LIMIT = 7;         // rodadas sem atacar até a punição
 const GOLD_AT = 10;              // bolinha dourada a partir de 10 soldados
 
@@ -230,13 +284,16 @@ const ADJ = {}; TIDS.forEach(id => ADJ[id] = []);
 LINKS.forEach(([a,b]) => { ADJ[a].push(b); ADJ[b].push(a); });
 const adj = (a,b) => ADJ[a].includes(b);
 
+// cor da borda de cada continente
+const CCOL = {an:"#FACC15", as:"#F472B6", eu:"#FFFFFF", af:"#92400E", asi:"#84CC16", oc:"#111827"};
+const CCOLN = {an:"amarelo", as:"rosa", eu:"branco", af:"marrom", asi:"verde-limão", oc:"preto"};
 const COLORS = [
-  {n:"Azul",     f:"#5B8DEF", d:"#1E4FBF"},
-  {n:"Vermelho", f:"#EF6B6B", d:"#B42323"},
-  {n:"Verde",    f:"#4CC27A", d:"#157A3E"},
-  {n:"Roxo",     f:"#A07CF0", d:"#5B33B8"},
-  {n:"Ciano",    f:"#3EC1D3", d:"#0E7490"},
-  {n:"Laranja",  f:"#F59E4B", d:"#B45309"}
+  {n:"Azul",     f:"#3B82F6", d:"#1D4ED8"},
+  {n:"Vermelho", f:"#EF4444", d:"#B91C1C"},
+  {n:"Verde",    f:"#22C55E", d:"#15803D"},
+  {n:"Roxo",     f:"#A855F7", d:"#7E22CE"},
+  {n:"Ciano",    f:"#06B6D4", d:"#0E7490"},
+  {n:"Laranja",  f:"#F97316", d:"#C2410C"}
 ];
 const SYM = ["▲","■","●","★"];
 
@@ -327,6 +384,26 @@ function objDone(g, u) {
   if (o.n) return mine.filter(t => g.troops[t] >= o.m).length >= (o.team ? o.n : goalN(g, g.obj[u]));
   return false; // objetivos de eliminação são checados na eliminação
 }
+// andamento da missão: lista de itens (feito ou não) e porcentagem
+function objProgress(g, u) {
+  const o = OBJ[g.obj[u]]; if (!o) return {pct:0, items:[]};
+  const m = mates(g, u); const mine = TIDS.filter(t => m.includes(g.owner[t]));
+  const items = []; let have = 0, need = 0;
+  if (o.c) {
+    o.c.forEach(c => { const ts = TIDS.filter(t => TI[t].c === c); const h = ts.filter(t => m.includes(g.owner[t])).length; items.push({t:`${CONT[c].n}: ${h}/${ts.length}`, ok: h === ts.length}); have += h; need += ts.length; });
+    if (o.x) {
+      const others = Object.keys(CONT).filter(c => !o.c.includes(c)).map(c => { const ts = TIDS.filter(t => TI[t].c === c); return {c, h: ts.filter(t => m.includes(g.owner[t])).length, n: ts.length}; }).sort((a, b) => (b.h / b.n) - (a.h / a.n));
+      const b = others[0]; items.push({t:`+1 continente (mais perto: ${CONT[b.c].n} ${b.h}/${b.n})`, ok: b.h === b.n}); have += b.h; need += b.n;
+    }
+  } else if (o.n) {
+    const N = o.team ? o.n : goalN(g, g.obj[u]); const h = mine.filter(t => g.troops[t] >= o.m).length;
+    items.push({t:`Territórios${o.m > 1 ? " com 2+ tropas" : ""}: ${h}/${N}`, ok: h >= N}); have = Math.min(h, N); need = N;
+  } else if (o.kill || o.k !== undefined) {
+    const targets = o.kill ? g.order.filter(x => !m.includes(x)) : g.order.filter(x => g.col[x] === o.k);
+    targets.forEach(x => { const left = owned(g, x).length; items.push({t:`${g.names[x]}: ${left ? left + " territórios restantes" : "eliminado ✔"}`, ok: !left}); have += (Math.round(TIDS.length / g.order.length) - Math.min(left, Math.round(TIDS.length / g.order.length))); need += Math.round(TIDS.length / g.order.length); });
+  }
+  return {pct: need ? Math.max(0, Math.min(1, have / need)) : 0, items};
+}
 function winCheck(g, u) {
   if (g.winner || g.elim[u]) return;
   if (objDone(g, u)) { g.winner = u; g.conq = null; logp(g, isDuo(g) ? `🏆 ${teamName(g,u)} (${mates(g,u).map(x => g.names[x]).join(" e ")}) completou o objetivo e venceu!` : `🏆 ${g.names[u]} completou o objetivo e venceu!`); }
@@ -341,13 +418,14 @@ function startTurn(g) {
 }
 function drawCard(g, u) {
   if (!g.deck.length) { g.deck = shuffle(g.discard); g.discard = []; }
-  if (!g.deck.length) return;
-  g.cards[u].push(g.deck.pop());
+  if (!g.deck.length) return null;
+  const c = g.deck.pop(); g.cards[u].push(c); return c;
 }
 function endTurn(g) {
   const u = cur(g);
   if (g.round > 1) g.passive[u] = g.attacked ? 0 : (g.passive[u] || 0) + 1;
-  if (g.conquered) drawCard(g, u);
+  g.newCard = g.newCard || {};
+  g.newCard[u] = g.conquered ? (drawCard(g, u) || null) : null;
   if (g.winner) return;
   let i = g.turnIdx, guard = 0;
   do { i = (i + 1) % g.order.length; if (i === 0) g.round++; guard++; } while (g.elim[g.order[i]] && guard < 10);
@@ -361,6 +439,8 @@ function autoEnd(g) {
     for (let k = 0; k < g.reinf; k++) { const t = mine[Math.floor(Math.random() * mine.length)]; g.troops[t]++; }
     g.reinf = 0;
   }
+  if (g.duel) resolveDuel(g, roll(), true);
+  if (g.winner) return;
   if (g.conq) g.conq = null;
   logp(g, `⏱ Tempo esgotado para ${g.names[u]}`);
   endTurn(g);
@@ -411,6 +491,7 @@ function aPlace(t, n) {
 function aNext() {
   return act((g, fail) => {
     if (myTurnCheck(g, fail) === false) return false;
+    if (g.duel) return fail("Aguarde o defensor jogar o dado.");
     if (g.phase === "deploy") {
       if (g.cards[uid].length >= 5) return fail("Você tem 5 cartas: troque 3 primeiro.");
       if (g.reinf > 0) return fail(`Distribua as ${g.reinf} tropas restantes.`);
@@ -426,49 +507,76 @@ function enterMove(g) {
   g.phase = "move"; g.conq = null; g.movable = {};
   owned(g, cur(g)).forEach(t => { if (g.troops[t] > 1) g.movable[t] = g.troops[t] - 1; });
 }
+// Início: cada jogador joga 1 dado; quem tirar mais começa (empate: quem jogou primeiro fica na frente)
 function aReady() {
   return act((g, fail) => {
     if (g.started !== false) return false;
-    g.ready = g.ready || {}; g.ready[uid] = true;
-    if (g.order.every(u => g.ready[u])) { g.started = true; g.deadline = now() + TURN_MS; logp(g, "✅ Todos confirmaram. Que comece a guerra!"); }
+    g.ready = g.ready || {};
+    if (g.ready[uid]) return fail("Você já jogou o seu dado.");
+    g.ready[uid] = {v: roll(), ts: now()};
+    if (g.order.every(u => g.ready[u])) finalizeOrder(g);
   });
 }
-function aAttack(from, to, blitz) {
+function finalizeOrder(g) {
+  const rk = (a, b) => (g.ready[b].v - g.ready[a].v) || (g.ready[a].ts - g.ready[b].ts);
+  const sorted = g.order.slice().sort(rk);
+  if (isDuo(g)) {
+    const A = sorted.filter(u => g.team[u] === g.team[sorted[0]]), B = sorted.filter(u => g.team[u] !== g.team[sorted[0]]);
+    g.order = [A[0], B[0], A[1], B[1]];
+  } else g.order = sorted;
+  g.turnIdx = 0; g.round = 1; g.started = true;
+  g.orderAnn = {list: g.order.map(u => [u, g.ready[u].v]), ts: now()};
+  logp(g, "🎲 Ordem pelo dado: " + g.order.map(u => `${g.names[u]} (${g.ready[u].v})`).join(" → "));
+  startTurn(g);
+}
+// Duelo: o atacante joga o dado dele (cria o duelo); o defensor joga o dele no próprio celular (resolve).
+// Se o defensor não jogar em 15 s, o dado dele é jogado automaticamente.
+function aAttack(from, to) {
   return act((g, fail) => {
     if (myTurnCheck(g, fail) === false) return false;
     if (g.round === 1) return fail("Ataques liberados só a partir da 2ª rodada.");
     if (g.phase !== "attack") return fail("Não é fase de ataque.");
+    if (g.duel) return fail("Aguarde o defensor jogar o dado.");
     if (g.owner[from] !== uid) return fail("Origem não é sua.");
     if (g.owner[to] === uid) return fail("Esse território já é seu.");
     if (isAlly(g, uid, g.owner[to])) return fail("Esse território é do seu parceiro.");
     if (!adj(from, to)) return fail("Territórios não são vizinhos.");
     if (g.troops[from] < 2) return fail("Precisa de pelo menos 2 tropas para atacar.");
+    if (!window.__fast && g.battle && g.battle.by === uid && now() - g.battle.ts < 1500) return fail("Espere o dado parar de rolar.");
     g.conq = null;
-    const def = g.owner[to];
-    let al = 0, dl = 0, rounds = 0, a = [], d = [];
-    do {
-      const ad = Math.min(3, g.troops[from] - 1), dd = Math.min(3, g.troops[to]);
-      a = Array.from({length:ad}, roll).sort((x,y) => y - x);
-      d = Array.from({length:dd}, roll).sort((x,y) => y - x);
-      const pairs = Math.min(ad, dd);
-      let aw = 0, dw = 0;
-      for (let i = 0; i < pairs; i++) { if (a[i] > d[i]) aw++; else dw++; }
-      g.troops[from] -= dw; g.troops[to] -= aw; al += dw; dl += aw; rounds++;
-    } while (blitz && g.troops[to] > 0 && g.troops[from] > 1 && rounds < 200);
-    g.attacked = true;
-    const conquered = g.troops[to] <= 0;
-    g.battle = {by:uid, def, from, to, a, d, al, dl, rounds, conq:conquered, ts:now()};
-    logp(g, `⚔️ ${g.names[uid]} atacou ${TI[to].n} a partir de ${TI[from].n}: atacante perdeu ${al}, defensor perdeu ${dl}${rounds > 1 ? ` (${rounds} rolagens)` : ""}`);
-    if (conquered) {
-      g.owner[to] = uid; g.troops[to] = 1; g.troops[from] -= 1; g.conquered = true;
-      logp(g, `🏳️ ${g.names[uid]} conquistou ${TI[to].n}`);
-      const max = Math.min(2, g.troops[from] - 1);
-      g.conq = max > 0 ? {from, to, max} : null;
-      if (owned(g, def).length === 0) eliminate(g, def, uid);
-      if (g.winner) { g.conq = null; logp(g, `🏆 ${g.names[g.winner]} completou o objetivo e venceu!`); }
-      else winCheck(g, uid);
-    }
+    g.duel = {by:uid, def:g.owner[to], from, to, a:roll(), ts:now()};
   });
+}
+function aDefRoll() {
+  return act((g, fail) => {
+    if (!g.duel) return false;
+    if (g.duel.def !== uid) return fail("Não é você quem está defendendo.");
+    resolveDuel(g, roll(), false);
+  });
+}
+function resolveDuel(g, d, auto) {
+  const D = g.duel; g.duel = null;
+  const A = D.by, def = D.def, from = D.from, to = D.to, a = D.a;
+  g.deadline += Math.min(DEF_MS, Math.max(0, now() - D.ts));   // o tempo esperando o defensor não conta para o atacante
+  const atkWins = a > d;                                       // empate: defensor vence
+  const al = atkWins ? 0 : 1, dl = atkWins ? 1 : 0;
+  g.troops[from] -= al; g.troops[to] -= dl;
+  g.attacked = true;
+  const conquered = g.troops[to] <= 0;
+  g.battle = {by:A, def, from, to, a:[a], d:[d], al, dl, rounds:1, conq:conquered, auto:!!auto, ts:now()};
+  logp(g, `🎲 ${g.names[A]} (${a}) x ${g.names[def]} (${d})${auto ? " [automático]" : ""} em ${TI[to].n}: ${atkWins ? g.names[def] : g.names[A]} perdeu 1 soldado`);
+  if (conquered) {
+    const before = Object.keys(CONT).filter(c => holds(g, c, A));
+    g.owner[to] = A; g.troops[to] = 1; g.troops[from] -= 1; g.conquered = true;
+    logp(g, `🏳️ ${g.names[A]} conquistou ${TI[to].n}`);
+    const gained = Object.keys(CONT).filter(c => holds(g, c, A) && !before.includes(c));
+    if (gained.length) { g.ann = {u:A, cs:gained, ts:now()}; logp(g, `🌍 ${isDuo(g) ? teamName(g, A) : g.names[A]} dominou ${gained.map(c => CONT[c].n).join(" e ")}!`); }
+    const max = g.troops[from] - 1;          // pode levar quantos quiser, deixando pelo menos 1 na origem
+    g.conq = max > 0 ? {from, to, max} : null;
+    if (owned(g, def).length === 0) eliminate(g, def, A);
+    if (g.winner) { g.conq = null; logp(g, `🏆 ${g.names[g.winner]} completou o objetivo e venceu!`); }
+    else winCheck(g, A);
+  }
 }
 function aConqMove(n) {
   return act((g, fail) => {
@@ -511,13 +619,20 @@ function aTrade(idxs) {
     winCheck(g, uid);
   });
 }
-let lastTimeoutTry = 0;
+let lastTimeoutTry = 0, lastDuelTry = 0;
 function checkTimeout() {
   const g = R && R.game; if (!g || g.winner) return;
   if (g.started === false) {
     if (!g.readyBy || now() < g.readyBy || Date.now() - lastTimeoutTry < 4000) return;
     lastTimeoutTry = Date.now();
-    act(g2 => { if (g2.started !== false || now() < g2.readyBy) return false; g2.started = true; g2.deadline = now() + TURN_MS; logp(g2, "⏱ Tempo de confirmação esgotado: partida iniciada."); });
+    act(g2 => { if (g2.started !== false || now() < g2.readyBy) return false; g2.ready = g2.ready || {}; g2.order.forEach(u => { if (!g2.ready[u]) g2.ready[u] = {v: roll(), ts: now() + 1}; }); logp(g2, "⏱ Tempo esgotado: o dado de quem faltou foi jogado automaticamente."); finalizeOrder(g2); });
+    return;
+  }
+  if (g.duel) {
+    if (now() < g.duel.ts + DEF_MS + 500 || Date.now() - lastDuelTry < 3000) return;
+    lastDuelTry = Date.now();
+    const ts = g.duel.ts;
+    act(g2 => { if (!g2.duel || g2.duel.ts !== ts || now() < g2.duel.ts + DEF_MS) return false; resolveDuel(g2, roll(), true); });
     return;
   }
   if (now() < g.deadline + 1500) return;
@@ -527,12 +642,28 @@ function checkTimeout() {
   act((g2) => { if (g2.winner || g2.deadline !== dl || now() < g2.deadline + 1000) return false; autoEnd(g2); });
 }
 
+/* ================= EASTER EGGS ================= */
+// normaliza o texto para pegar variações: acentos, números no lugar de letras (m1guel, th0mas), letras repetidas, espaços…
+function canon(txt) {
+  const map = {"1":"i","!":"i","|":"i","l":"i","y":"i","3":"e","€":"e","4":"a","@":"a","0":"o","5":"s","$":"s","z":"s","7":"t","+":"t","9":"g","6":"g","v":"u","w":"u"};
+  let s = (txt || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  s = [...s].map(c => map[c] || c).join("").replace(/[^a-z]/g, "");
+  s = s.replace(/(.)\1+/g, "$1").replace(/th/g, "t").replace(/gu/g, "g").replace(/h/g, "");
+  return s;
+}
+const rev = t => [...(t || "")].reverse().join("");
+const isMiguel = n => canon(n).includes("migei") || canon(rev(n)).includes("migei");
+const isThomas = n => canon(n).includes("tomas") || canon(rev(n)).includes("tomas");
+const funName = n => isMiguel(n) && !n.includes("🦆") ? n + " 🦆😭" : n;
+const THOMAS_MSG = "🎖️ Esse nome já está reservado para um futuro general!";
+
 /* ================= SALAS ================= */
 const savedName = () => ($("name").value.trim() || localStorage.getItem("cm_name") || "").slice(0,14);
 function genCode() { const L = "ABCDEFGHJKLMNPQRSTUVWXYZ"; return Array.from({length:4}, () => L[Math.floor(Math.random()*L.length)]).join(""); }
 async function createRoom() {
-  const name = savedName(); if (!name) return toast("Digite seu apelido.");
-  localStorage.setItem("cm_name", name);
+  const raw = savedName(); if (!raw) return toast("Digite seu apelido.");
+  if (isThomas(raw)) return toast(THOMAS_MSG, 4000);
+  localStorage.setItem("cm_name", raw); const name = funName(raw);
   let code;
   for (let i = 0; i < 6; i++) { code = genCode(); const s = await get(ref(db, `rooms/${code}/meta`)); if (!s.exists()) break; }
   await set(ref(db, `rooms/${code}`), { meta:{host:uid, status:"lobby", created:now()}, players:{[uid]:{name, color:0, joined:now(), online:true}} });
@@ -541,8 +672,9 @@ async function createRoom() {
 async function joinRoom(code) {
   code = (code || "").trim().toUpperCase();
   if (code.length !== 4) return toast("O código tem 4 letras.");
-  const name = savedName(); if (!name) return toast("Digite seu apelido.");
-  localStorage.setItem("cm_name", name);
+  const raw = savedName(); if (!raw) return toast("Digite seu apelido.");
+  if (isThomas(raw)) return toast(THOMAS_MSG, 4000);
+  localStorage.setItem("cm_name", raw); const name = funName(raw);
   const [ms, pss] = await Promise.all([get(ref(db, `rooms/${code}/meta`)), get(ref(db, `rooms/${code}/players`))]);
   if (!ms.exists()) return toast("Sala não encontrada.");
   const room = {meta: ms.val(), players: pss.val() || {}}; const players = room.players;
@@ -618,10 +750,9 @@ function buildGame(ps, mode) {
   g.deck = shuffle(TIDS.map((t, i) => ({t, s:i % 3})).concat([{t:"*", s:3}, {t:"*", s:3}]));
   norm(g);
   if (duo) logp(g, `👥 Dupla A: ${g.names[g.order[0]]} e ${g.names[g.order[2]]} · Dupla B: ${g.names[g.order[1]]} e ${g.names[g.order[3]]}`);
-  logp(g, "🌍 A partida começou! Ordem: " + g.order.map(u => g.names[u]).join(" → "));
-  startTurn(g);
+  logp(g, "🌍 A partida começou! Cada jogador vê o seu objetivo e joga o dado: quem tirar mais começa.");
+  g.phase = "deploy"; g.reinf = 0; g.deadline = 0;
   g.started = false; g.ready = {}; g.readyBy = now() + 90000;
-  logp(g, "🎯 Cada jogador confirma o seu objetivo secreto para começar (1ª rodada sem ataques)");
   return g;
 }
 async function startGame() {
@@ -655,7 +786,7 @@ const gRoot = svg.append("g");
 const defs = svg.append("defs");
 const gpath = d3.geoPath(proj);
 let P = {}; T.forEach(t => P[t[0]] = proj([t[3], t[4]]));
-let pxPerUnit = 0.6;
+let pxPerUnit = 0.6, VBW = 680, VBH = 400;
 let landSel = null, nodeSel = null, mapReady = false, zoomK = 1;
 const zoom = d3.zoom().scaleExtent([1, 10]).translateExtent([[0,0],[W,H]]).on("zoom", e => { gRoot.attr("transform", e.transform); zoomK = e.transform.k; scaleMarks(); });
 svg.call(zoom).on("dblclick.zoom", null);
@@ -665,12 +796,15 @@ $("zReset").onclick = () => svg.transition().duration(300).call(zoom.scaleTo, 1)
 let lastBox = "";
 function fitMap() {
   const r = $("mapbox").getBoundingClientRect(); if (!r.width || !r.height) return;
-  const key = Math.round(r.width) + "x" + Math.round(r.height); if (key === lastBox) return; lastBox = key;
-  const Wv = Math.max(W, H * r.width / r.height), Hv = Math.max(H, W * r.height / r.width);
+  const key = Math.round(r.width) + "x" + Math.round(r.height); if (key === lastBox) return;
+  const first = !lastBox, widthChanged = !first && lastBox.split("x")[0] !== String(Math.round(r.width)); lastBox = key;
+  // a altura da barra de baixo muda com o texto: se só a altura mudou, mantém a largura do viewBox (o mapa não pula)
+  const Wv = widthChanged || first ? Math.max(W, H * r.width / r.height) : VBW;
+  const Hv = Wv * r.height / r.width;
   svg.attr("viewBox", `0 0 ${Wv} ${Hv}`);
-  pxPerUnit = r.width / Wv;
+  pxPerUnit = r.width / Wv; VBW = Wv; VBH = Hv;
   zoom.extent([[0,0],[Wv,Hv]]);
-  svg.call(zoom.scaleTo, zoomK || 1);
+  if (first || widthChanged) svg.call(zoom.scaleTo, zoomK || 1);   // só recentraliza na primeira vez ou se a tela girou
 }
 window.addEventListener("resize", () => fitMap());
 
@@ -704,6 +838,11 @@ async function buildMap() {
   const feats = topojson.feature(w, w.objects.countries).features;
   const terrOf = f => { const n = f.properties.name; if (SPLIT[n]) return n; return O[n] || nearest(d3.geoCentroid(f)); };
   const contOf = f => { const n = f.properties.name; if (n === "Russia") return "ru"; if (SPLIT[n]) return "an"; return TI[terrOf(f)].c; };
+  // mar com ondinhas (padrão) e sombra embaixo dos continentes
+  const wv = defs.append("pattern").attr("id", "waves").attr("width", 22).attr("height", 12).attr("patternUnits", "userSpaceOnUse");
+  wv.append("path").attr("d", "M0 8 q2.75 -4 5.5 0 t5.5 0").attr("fill", "none").attr("stroke", "#ffffff").attr("stroke-opacity", .28).attr("stroke-width", .7).attr("stroke-linecap", "round");
+  gRoot.append("rect").attr("x", -W).attr("y", -H).attr("width", W * 3).attr("height", H * 3).attr("fill", "url(#waves)").attr("pointer-events", "none");
+  gRoot.append("path").datum(topojson.merge(w, w.objects.countries.geometries)).attr("d", gpath).attr("fill", "#0c2f52").attr("opacity", .5).attr("transform", "translate(1.1,1.8)").attr("pointer-events", "none");
   const land = gRoot.append("g");
   feats.forEach(f => {
     const n = f.properties.name;
@@ -717,7 +856,7 @@ async function buildMap() {
   });
   landSel = land.selectAll("path").attr("fill", "#d6d3c4").attr("stroke-width", 0.5).style("cursor", "pointer");
   // fronteiras entre territórios (brancas)
-  const bord = gRoot.append("g").attr("fill", "none").attr("stroke", "#ffffff").attr("stroke-linejoin", "round").attr("class", "b1");
+  const bord = gRoot.append("g").attr("fill", "none").attr("stroke", "#1f2937").attr("stroke-opacity", .6).attr("stroke-linejoin", "round").attr("class", "b1");
   bord.append("path").datum(topojson.mesh(w, w.objects.countries, (a,b) => a !== b && terrOf(a) !== terrOf(b))).attr("d", gpath);
   const splitLine = (name, lon, la, lb, g) => {
     const f = feats.find(x => x.properties.name === name); if (!f) return;
@@ -733,22 +872,33 @@ async function buildMap() {
   cb.append("path").datum(topojson.mesh(w, w.objects.countries, (a,b) => a !== b && (isRu(a) || isRu(b)) && contOf(isRu(a) ? b : a) !== "asi")).attr("d", gpath).attr("clip-path", clipRect(60, 180, -85, 85));
   splitLine("Russia",60,40,85,cb);
   // litoral
-  gRoot.append("path").datum(topojson.mesh(w, w.objects.countries, (a,b) => a === b)).attr("d", gpath).attr("fill", "none").attr("stroke", "#3f6382").attr("class", "b3");
+  const coastP = gRoot.append("path").datum(topojson.mesh(w, w.objects.countries, (a,b) => a === b)).attr("d", gpath).attr("fill", "none").attr("stroke", "#0f172a").attr("stroke-linejoin", "round").attr("class", "b3");
+  // contorno colorido de cada continente: as linhas de borda do continente são desenhadas na cor dele,
+  // recortadas pela área do próprio continente (fica uma faixa colorida por dentro do contorno)
+  const edges = defs.append("g").attr("id", "cedges").attr("fill", "none");
+  [coastP.node(), ...cb.selectAll("path").nodes()].forEach(n => { const c = n.cloneNode(true); c.removeAttribute("stroke"); c.removeAttribute("class"); edges.node().appendChild(c); });
+  const bandG = gRoot.insert("g", ".b1").attr("class", "cbands").attr("pointer-events", "none");
+  Object.keys(CONT).forEach(c => {
+    const cp = defs.append("clipPath").attr("id", "cc_" + c);
+    landSel.filter(function () { return TI[this.getAttribute("data-t")].c === c; }).each(function () { const k = this.cloneNode(false); k.removeAttribute("fill"); k.removeAttribute("stroke"); k.removeAttribute("opacity"); k.removeAttribute("style"); cp.node().appendChild(k); });
+    bandG.append("use").attr("href", "#cedges").attr("clip-path", `url(#cc_${c})`).attr("stroke", CCOL[c]).attr("stroke-linejoin", "round").attr("class", "cband");
+  });
   // rotas marítimas
   // nome sutil de cada continente
   const CLBL = {an:[-104,47,"AMÉRICA DO NORTE"], as:[-60,-26,"AMÉRICA DO SUL"], eu:[10,60,"EUROPA"], af:[14,3,"ÁFRICA"], asi:[96,55,"ÁSIA"], oc:[124,-20,"OCEANIA"]};
   gRoot.append("g").attr("class", "cl").attr("pointer-events", "none").selectAll("text").data(Object.keys(CLBL)).join("text")
     .attr("x", c => proj(CLBL[c])[0]).attr("y", c => proj(CLBL[c])[1]).attr("text-anchor", "middle").attr("dominant-baseline", "central")
-    .attr("fill", "#0b1220").attr("font-weight", 800).attr("font-family", "system-ui,sans-serif").attr("letter-spacing", 2).text(c => CLBL[c][2]);
-  const sea = gRoot.append("g").attr("stroke", "#ffffff").attr("stroke-dasharray", "4 4").attr("opacity", .75).attr("fill", "none").attr("class", "sea");
+    .attr("fill", "#0b1220").attr("font-weight", 700).attr("font-family", "Fredoka,system-ui,sans-serif").attr("letter-spacing", 2).text(c => CLBL[c][2]);
+  const sea = gRoot.append("g").attr("stroke", "#ffffff").attr("stroke-dasharray", "4 4").attr("opacity", .9).attr("fill", "none").attr("class", "sea");
   SEA.forEach(k => { const [a,b] = k.split("-"); sea.append("line").attr("x1", P[a][0]).attr("y1", P[a][1]).attr("x2", P[b][0]).attr("y2", P[b][1]); });
   sea.append("line").attr("x1", P.alasca[0]).attr("y1", P.alasca[1]).attr("x2", 2).attr("y2", P.alasca[1]);
   sea.append("line").attr("x1", P.sibe[0]).attr("y1", P.sibe[1]).attr("x2", W - 2).attr("y2", P.alasca[1]);
   // bolinhas
   nodeSel = gRoot.append("g").selectAll("g").data(TIDS).join("g").attr("transform", t => `translate(${P[t]})`).style("cursor", "pointer");
+  nodeSel.append("circle").attr("class", "bsh").attr("fill", "rgba(0,0,0,.4)");
   nodeSel.append("circle").attr("class", "bub");
-  nodeSel.append("text").attr("class", "num").attr("text-anchor", "middle").attr("dominant-baseline", "central").attr("font-weight", 800).attr("font-family", "system-ui,sans-serif");
-  nodeSel.append("text").attr("class", "tn").attr("text-anchor", "middle").attr("dominant-baseline", "hanging").attr("fill", "#0f172a").attr("paint-order", "stroke").attr("stroke", "rgba(255,255,255,.85)").attr("stroke-linejoin", "round").attr("font-weight", 600).attr("font-family", "system-ui,sans-serif").text(t => TI[t].n);
+  nodeSel.append("text").attr("class", "num").attr("text-anchor", "middle").attr("dominant-baseline", "central").attr("font-weight", 700).attr("font-family", "Fredoka,system-ui,sans-serif");
+  nodeSel.append("text").attr("class", "tn").attr("text-anchor", "middle").attr("dominant-baseline", "hanging").attr("fill", "#0f172a").attr("paint-order", "stroke").attr("stroke", "rgba(255,255,255,.92)").attr("stroke-linejoin", "round").attr("font-weight", 600).attr("font-family", "Fredoka,system-ui,sans-serif").text(t => TI[t].n);
   landSel.on("click", function (e) { e.stopPropagation(); onTerr(this.getAttribute("data-t")); });
   nodeSel.on("click", (e, t) => { e.stopPropagation(); onTerr(t); });
   mapReady = true; $("mapLoading").style.display = "none";
@@ -760,13 +910,15 @@ function scaleMarks() {
   if (!mapReady) return;
   const k = zoomK, u = px => px / (pxPerUnit * k);
   const rPx = Math.min(11, 6.5 * Math.pow(k, .3));
-  nodeSel.select(".bub").attr("r", u(rPx)).attr("stroke-width", u(1.4));
+  nodeSel.select(".bub").attr("r", u(rPx)).attr("stroke-width", u(1.7));
   nodeSel.select(".num").attr("font-size", u(rPx * 1.12));
   const fPx = Math.min(10, 6 * Math.pow(k, .28));
   nodeSel.select(".tn").attr("font-size", u(fPx)).attr("y", u(rPx + 1.5)).attr("stroke-width", u(2));
-  gRoot.select(".b1").attr("stroke-width", u(.9));
-  gRoot.select(".b2").attr("stroke-width", u(2.6));
-  gRoot.select(".b3").attr("stroke-width", u(.6));
+  gRoot.select(".b1").attr("stroke-width", u(.8));
+  gRoot.select(".b2").attr("stroke-width", u(1.3));
+  gRoot.selectAll(".cband").attr("stroke-width", u(7));
+  gRoot.select(".b3").attr("stroke-width", u(1.7));
+  nodeSel.select(".bsh").attr("r", u(rPx)).attr("cx", u(.9)).attr("cy", u(1.6));
   gRoot.select(".sea").attr("stroke-width", u(1)).attr("stroke-dasharray", `${u(3)} ${u(3)}`);
   gRoot.select(".cl").selectAll("text").attr("font-size", u(Math.min(30, 11 * Math.pow(k, .6)))).attr("opacity", k < 2.2 ? .17 : Math.max(0, .17 - (k - 2.2) * .06));
   cancelAnimationFrame(cullRaf); cullRaf = requestAnimationFrame(cullLabels);
@@ -794,12 +946,14 @@ function paint() {
   const g = R && R.game;
   const cand = candidates();
   labelsFor = new Set(sel ? [sel, ...cand] : []);
-  const deployMine = g && !g.winner && g.started !== false && cur(g) === uid && g.phase === "deploy" && g.reinf > 0;
+  if (focusTerr) { focusTerr.forEach(t => labelsFor.add(t)); }
+  const deployMine = !focusTerr && g && !g.winner && g.started !== false && cur(g) === uid && g.phase === "deploy" && g.reinf > 0;
   if (deployMine) owned(g, uid).forEach(t => cand.push(t));
   const dim = !!sel || deployMine;
   landSel.each(function () {
     const t = this.getAttribute("data-t"); const el = d3.select(this);
-    const o = g && g.owner[t]; const col = o ? COLORS[g.col[o]].f : "#d6d3c4";
+    const o = g && g.owner[t]; let col = o ? COLORS[g.col[o]].f : "#d6d3c4";
+    if (focusTerr && !focusTerr.includes(t)) col = "#a8a29e";
     const changed = g && prevOwner[t] && prevOwner[t] !== o;
     if (changed) el.attr("fill", "#ffffff").transition().duration(700).attr("fill", col).attr("stroke", col);
     else el.interrupt().attr("fill", col).attr("stroke", col);
@@ -809,9 +963,9 @@ function paint() {
   nodeSel.each(function (t) {
     const el = d3.select(this); const o = g && g.owner[t]; const n = g ? g.troops[t] : 0;
     const gold = n >= GOLD_AT; const c = o ? COLORS[g.col[o]] : {f:"#999", d:"#333"};
-    el.select(".bub").attr("fill", gold ? "#F5B700" : "#ffffff").attr("stroke", t === sel ? "#f5b700" : (gold ? "#8A6100" : c.d));
+    el.select(".bub").attr("fill", gold ? "#F5B700" : "#ffffff").attr("stroke", t === sel ? "#f5b700" : "#0f172a");
     el.select(".num").attr("fill", gold ? "#3d2a00" : c.d).text(g ? n : "");
-    el.attr("opacity", dim && t !== sel && !cand.includes(t) ? 0.45 : 1);
+    el.attr("opacity", focusTerr ? (focusTerr.includes(t) ? 1 : 0.3) : (dim && t !== sel && !cand.includes(t) ? 0.45 : 1));
   });
   if (sel) { landSel.filter(function () { return this.getAttribute("data-t") === sel; }).attr("stroke", "#f5b700").attr("stroke-width", 2 / Math.sqrt(zoomK)).raise(); }
   else landSel.attr("stroke-width", 0.5);
@@ -867,16 +1021,19 @@ function onTerr(t) {
 let modalKind = null;
 function openModal(html, kind) { $("sheet").innerHTML = html; $("modal").classList.add("on"); modalKind = kind || "x"; }
 function closeModal() { $("modal").classList.remove("on"); modalKind = null; atk = null; }
-$("modal").addEventListener("click", e => { if (e.target.id === "modal" && modalKind !== "conq" && modalKind !== "ready") closeModal(); });
+$("modal").addEventListener("click", e => { if (e.target.id === "modal" && !["conq","ready","def"].includes(modalKind)) closeModal(); });
 function openReady() {
-  const g = R.game; const c = COLORS[g.col[uid]];
+  const g = R.game; const c = COLORS[g.col[uid]]; const rd = g.ready || {};
   const partner = isDuo(g) ? mates(g, uid).find(x => x !== uid) : null;
+  const rolled = !!rd[uid];
+  const list = g.order.map(u => `<div class="it"><i class="dot" style="background:${COLORS[g.col[u]].f}"></i>${esc(g.names[u])}${u === uid ? " (você)" : ""}<span class="r">${rd[u] ? "🎲 <b style='color:var(--txt);font-size:16px'>" + rd[u].v + "</b>" : "aguardando…"}</span></div>`).join("");
   openModal(`<h3>🎯 ${partner ? "Objetivo secreto da sua dupla" : "Seu objetivo secreto"}</h3>
     <div class="lbl">Você joga com a cor <b style="color:${c.f}">${c.n.toUpperCase()}</b>.${partner ? ` Você está na <b>${teamName(g, uid)}</b> com <b style="color:${COLORS[g.col[partner]].f}">${esc(g.names[partner])}</b>. Vocês não podem se atacar e podem mandar tropas um para o outro no remanejamento.` : ""}</div>
     <div class="obj">${esc(objText(g, uid))}</div>
-    <div class="lbl">Guarde segredo! Você pode rever o objetivo a qualquer momento no botão 🎯. Na 1ª rodada ninguém ataca: aproveite para se fortalecer.</div>
-    <button class="btn pri" id="rOk">Entendi, estou pronto!</button>`, "ready");
-  $("rOk").onclick = async () => { $("rOk").disabled = true; closeModal(); await aReady(); };
+    <div class="lbl">Guarde segredo! Dá pra rever no botão 🎯. Agora todos jogam o dado: <b>quem tirar mais começa</b> (empate: quem jogou primeiro).</div>
+    <div class="list">${list}</div>
+    <button class="btn pri" id="rOk" ${rolled ? "disabled" : ""} style="font-size:17px;padding:15px">${rolled ? "Aguardando os outros jogarem…" : "🎲 Jogar o dado"}</button>`, "ready");
+  if (!rolled) $("rOk").onclick = async () => { $("rOk").disabled = true; await aReady(); };
 }
 function stepper(title, max, def, onOk, sub) {
   let v = Math.max(1, Math.min(def, max));
@@ -891,29 +1048,43 @@ function stepper(title, max, def, onOk, sub) {
   $("sOk").onclick = () => { closeModal(); onOk(v); };
   $("sCancel").onclick = closeModal;
 }
-let atk = null;
+let atk = null, rollLock = 0;
 function openAttack(from, to) { atk = {from, to}; renderAttack(); }
 function renderAttack() {
   const g = R.game; if (!atk) return;
   const {from, to} = atk;
-  if (g.owner[to] === uid || g.owner[from] !== uid || cur(g) !== uid || g.phase !== "attack" || g.winner) { closeModal(); return; }
+  const D = g.duel && g.duel.by === uid ? g.duel : null;
+  if (!D && (g.owner[to] === uid || g.owner[from] !== uid || cur(g) !== uid || g.phase !== "attack" || g.winner)) { closeModal(); return; }
   const a = g.troops[from], d = g.troops[to];
-  const can = a >= 2;
+  const can = a >= 2, locked = Date.now() < rollLock;
+  const dn = esc(g.names[g.owner[to]]);
   openModal(`<h3>⚔️ Ataque</h3>
-    <div class="vs"><div class="side">${esc(TI[from].n)}<b style="color:${COLORS[g.col[uid]].f}">${a}</b><span class="lbl">rola ${Math.min(3, Math.max(0, a - 1))} dado(s)</span></div>
-    <div>➜</div><div class="side">${esc(TI[to].n)}<b style="color:${COLORS[g.col[g.owner[to]]].f}">${d}</b><span class="lbl">rola ${Math.min(3, d)} dado(s)</span></div></div>
-    <div class="lbl">Os dados são comparados 1 contra 1, do maior para o menor. Empate: vence o defensor.</div>
-    <div class="row"><button class="btn pri" id="aOne" ${can ? "" : "disabled"}>🎲 Rolar dados</button><button class="btn red" id="aAll" ${can ? "" : "disabled"}>Atacar até o fim</button></div>
+    <div class="vs"><div class="side">${esc(TI[from].n)}<b style="color:${COLORS[g.col[uid]].f}">${a}</b><span class="lbl">${esc(g.names[uid])}</span></div>
+    <div>⚔️</div><div class="side">${esc(TI[to].n)}<b style="color:${COLORS[g.col[g.owner[to]]].f}">${d}</b><span class="lbl">${dn}</span></div></div>
+    ${D ? `<div class="lbl" style="text-align:center">Você tirou <b style="font-size:18px;color:var(--txt)">${D.a}</b>. Aguardando <b>${dn}</b> jogar o dado… <span id="defCount"></span></div>`
+        : `<div class="lbl">Você joga 1 dado, depois o defensor joga o dele. Quem tirar mais vence e o outro perde 1 soldado. Empate: vence o defensor. Pode atacar de novo enquanto tiver 2+ tropas aqui.</div>`}
+    <button class="btn pri" id="aOne" ${!D && can && !locked ? "" : "disabled"}>${D ? "⏳ Aguardando o defensor…" : (locked ? "🎲 Rolando…" : "🎲 Jogar meu dado")}</button>
     <button class="btn" id="aCancel">Fechar</button>`, "atk");
-  $("aOne").onclick = () => { $("aOne").disabled = true; aAttack(from, to, false); };
-  $("aAll").onclick = () => { $("aAll").disabled = true; aAttack(from, to, true); };
+  $("aOne").onclick = () => { if (Date.now() < rollLock || (R.game.duel)) return; $("aOne").disabled = true; aAttack(from, to); };
   $("aCancel").onclick = () => { closeModal(); sel = null; paint(); };
+}
+// janela do defensor (aparece no celular de quem está sendo atacado)
+function openDefend() {
+  const g = R.game, D = g.duel;
+  openModal(`<h3>🛡️ Você está sendo atacado!</h3>
+    <div class="lbl"><b style="color:${COLORS[g.col[D.by]].f}">${esc(g.names[D.by])}</b> ataca <b>${esc(TI[D.to].n)}</b> (${g.troops[D.to]} soldado${g.troops[D.to] > 1 ? "s" : ""}) a partir de ${esc(TI[D.from].n)}.</div>
+    <div class="vs"><div class="side">Ele tirou<div style="display:flex;justify-content:center;margin-top:6px">${dieHTML(D.a, "a big")}</div></div>
+    <div>VS</div><div class="side">Você<div style="display:flex;justify-content:center;margin-top:6px"><div class="die d big q"><b>?</b></div></div></div></div>
+    <div class="lbl" style="text-align:center">Tire <b>${D.a}</b> ou mais para segurar o ataque. Dado automático em <b id="defCount2"></b>.</div>
+    <button class="btn pri" id="dRoll" style="font-size:18px;padding:16px">🎲 Jogar meu dado</button>`, "def");
+  $("dRoll").onclick = () => { $("dRoll").disabled = true; $("dRoll").textContent = "🎲 Rolando…"; aDefRoll(); };
+  try { navigator.vibrate && navigator.vibrate([220, 100, 220]); } catch (e) {}
 }
 function openConq(c) {
   const g = R.game;
   let v = c.max;
   openModal(`<h3>🏳️ ${esc(TI[c.to].n)} conquistado!</h3>
-    <div class="lbl">1 tropa já entrou. Quantas tropas extras mover de ${esc(TI[c.from].n)}? (até ${c.max})</div>
+    <div class="lbl">1 soldado já entrou em ${esc(TI[c.to].n)}. Quantos soldados <b>a mais</b> você quer levar de ${esc(TI[c.from].n)}? Pode levar até ${c.max} (pelo menos 1 tem que ficar em ${esc(TI[c.from].n)}).</div>
     <div class="step"><button id="cMinus">−</button><div class="val" id="cVal">${v}</div><button id="cPlus">+</button></div>
     <button class="btn pri" id="cOk">Confirmar</button>`, "conq");
   const upd = () => $("cVal").textContent = v;
@@ -951,11 +1122,11 @@ function openObj() {
 }
 function openConts() {
   const g = R.game;
-  openModal(`<h3>🌍 Continentes</h3><div class="list">${Object.keys(CONT).map(c => {
+  openModal(`<h3>🌍 Continentes</h3><div class="lbl">A cor da faixa ao lado de cada nome é a cor da borda do continente no mapa.</div><div class="list">${Object.keys(CONT).map(c => {
     let o = contOwner(g, c); const ts = TIDS.filter(t => TI[t].c === c);
     if (!o && isDuo(g)) { const h = g.order.find(u => holds(g, c, u)); if (h) o = h; }
     const mine = ts.filter(t => g.owner[t] === uid).length;
-    return `<div class="it">${o ? `<i class="dot" style="background:${COLORS[g.col[o]].f}"></i>` : '<i class="dot" style="background:transparent;border-color:#475569"></i>'}<div><b>${CONT[c].n}</b> <span class="lbl">+${CONT[c].b} tropas</span><br><span class="lbl">${o ? "Dominado por " + (isDuo(g) && !contOwner(g, c) ? teamName(g, o) : esc(g.names[o])) : `Você tem ${mine} de ${ts.length}`}</span></div><span class="r">${ts.length} terr.</span></div>`;
+    return `<div class="it" style="border-left:6px solid ${CCOL[c]};border-radius:4px 10px 10px 4px">${o ? `<i class="dot" style="background:${COLORS[g.col[o]].f}"></i>` : '<i class="dot" style="background:transparent;border-color:#475569"></i>'}<div><b>${CONT[c].n}</b> <span class="lbl">+${CONT[c].b} tropas · borda ${CCOLN[c]}</span><br><span class="lbl">${o ? "Dominado por " + (isDuo(g) && !contOwner(g, c) ? teamName(g, o) : esc(g.names[o])) : `Você tem ${mine} de ${ts.length}`}</span></div><span class="r">${ts.length} terr.</span></div>`;
   }).join("")}</div><button class="btn" id="kClose">Fechar</button>`, "conts");
   $("kClose").onclick = closeModal;
 }
@@ -979,11 +1150,13 @@ function openHelp() {
   openModal(`<h3>Como jogar</h3><div class="list" style="font-size:13px;line-height:1.45">
   <div class="it">1. <b>Distribuir:</b> no início do turno você recebe tropas (metade dos seus territórios, mínimo 3, + bônus de continentes dominados). Toque nos seus territórios para colocá-las.</div>
   <div class="it">🕊️ <b>1ª rodada:</b> ninguém ataca, só distribui e remaneja. Os ataques começam na 2ª rodada.</div>
-  <div class="it">2. <b>Atacar:</b> toque num território seu com 2+ tropas e depois num vizinho inimigo. Cada lado rola até 3 dados; eles se enfrentam 1 contra 1 e cada derrota tira 1 soldado. Empate: defensor vence.</div>
-  <div class="it">3. <b>Remanejar:</b> mova tropas entre territórios seus vizinhos. Depois, encerre o turno.</div>
+  <div class="it">2. <b>Atacar:</b> toque num território seu com 2+ tropas e depois num vizinho inimigo. Cada ataque é 1 dado contra 1 dado: você aperta "Jogar meu dado", depois o defensor aperta o dele no celular dele (se não jogar em 15 s, o dado sai automático). Quem tirar mais vence e o outro perde 1 soldado; empate é do defensor. Dá pra atacar de novo enquanto tiver 2+ tropas.</div>
+  <div class="it">🎲 <b>Início:</b> todos jogam o dado; quem tirar mais começa (empate: quem jogou primeiro).</div>
+  <div class="it">🏳️ Ao conquistar um território, você escolhe quantos soldados levar (pelo menos 1 fica no território de onde atacou).</div>
+  <div class="it">3. <b>Remanejar:</b> mova tropas entre territórios seus vizinhos. Depois, toque em <b>Próximo turno</b>.</div>
   <div class="it">🃏 Conquistou pelo menos 1 território no turno? Ganha uma carta. 3 cartas viram tropas (4, 6, 8, 10, 12, 15…).</div>
   <div class="it">⚠️ Ficar ${PASSIVE_LIMIT} rodadas sem atacar faz você receber 1 tropa a menos por rodada, até atacar de novo.</div>
-  <div class="it">⏱ Cada turno tem 2 minutos. Se acabar, as tropas que faltam são distribuídas sozinhas e o turno passa.</div>
+  <div class="it">⏱ Cada turno tem 3 minutos. Se acabar, as tropas que faltam são distribuídas sozinhas e o turno passa.</div>
   <div class="it">🎯 Vence quem completar primeiro o seu objetivo secreto.</div>
   <div class="it">👥 <b>Dupla x Dupla</b> (4 jogadores): as duplas são sorteadas e jogam intercaladas. Parceiros não se atacam, podem mandar tropas um para o outro no remanejamento, e os dois recebem o bônus de um continente dominado pela dupla. A dupla tem um objetivo secreto em comum.</div></div>
   <button class="btn" id="hClose">Fechar</button>`, "help");
@@ -1027,6 +1200,7 @@ function drawChat() {
 }
 async function sendChat(text) {
   text = (text || "").trim().slice(0, 200); if (!text || !chatKey) return;
+  if (isThomas(text)) return toast("🎖️ A palavra Thomas está reservada para um futuro general!", 3500);
   try { await push(ref(db, `rooms/${roomCode}/chat/${chatKey}`), {u:uid, n:R.game.names[uid], m:text, ts:now()}); }
   catch (e) { toast("Não foi possível enviar: confira as regras do Firebase."); }
 }
@@ -1050,34 +1224,187 @@ function openChat() {
 /* ================= BATALHA (dados na tela de todos) ================= */
 const PIPS = {1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
 const dieHTML = (n, cls) => `<div class="die ${cls}">${Array.from({length:9}, (_, i) => `<i class="${PIPS[n].includes(i) ? "v" : ""}"></i>`).join("")}</div>`;
-let lastBattleTs = null, battleT = null;
-function showBattle(b, g) {
+let lastBattleTs = null, lastDuelTs = null, battleT = null, spinT = null;
+function floatText(t, txt, color) {
+  if (!mapReady || !P[t]) return;
+  const u = px => px / (pxPerUnit * zoomK);
+  const el = gRoot.append("text").attr("x", P[t][0]).attr("y", P[t][1] - u(12)).attr("text-anchor", "middle")
+    .attr("font-size", u(18)).attr("font-weight", 700).attr("font-family", "Fredoka,system-ui,sans-serif")
+    .attr("fill", color).attr("stroke", "#ffffff").attr("stroke-width", u(3.5)).attr("paint-order", "stroke").text(txt);
+  el.transition().duration(1500).ease(d3.easeCubicOut).attr("y", P[t][1] - u(46)).attr("opacity", 0).remove();
+}
+// ---- dado 3D: é "jogado" na tela, quica, cai mostrando o número e dá um zoom
+const FACE_ROT = {1:[0,0], 6:[0,180], 3:[0,-90], 4:[0,90], 5:[-90,0], 2:[90,0]};
+const faceHTML = n => `<div class="face f${n}">${Array.from({length:9}, (_, i) => `<i class="${PIPS[n].includes(i) ? "v" : ""}"></i>`).join("")}</div>`;
+function clearDice() { $("diceLayer").innerHTML = ""; }
+function throwDie(v, kind, x, y, fromLeft) {
+  const L = $("diceLayer");
+  const w = document.createElement("div"); w.className = "dw";
+  w.innerHTML = `<div class="dshadow"></div><div class="cube ${kind}">${[1,2,3,4,5,6].map(faceHTML).join("")}</div><div class="dnum">${v}</div>`;
+  L.appendChild(w);
+  const cube = w.querySelector(".cube");
+  const hb = $("battle").classList.contains("on") ? $("battle").getBoundingClientRect().bottom + 50 : 90;   // nunca cai em cima do painel
+  x = Math.max(10, Math.min(innerWidth - 66, x)); y = Math.max(hb, Math.min(innerHeight - 170, y));
+  const x0 = fromLeft ? -70 : innerWidth + 20, y0 = innerHeight * .78;
+  const mx = (x0 + x) / 2, my = Math.min(y0, y) - 150;
+  const [rx, ry] = FACE_ROT[v];
+  const sx = rx + 360 * (2 + Math.floor(Math.random() * 2)) + 90 * Math.floor(Math.random() * 4) * 0, sy = ry + 360 * (2 + Math.floor(Math.random() * 2));
+  const rz0 = (Math.random() * 300 + 200) * (fromLeft ? 1 : -1);
+  const T = 1150;
+  const path = w.animate([
+    {transform:`translate(${x0}px,${y0}px) scale(.7)`},
+    {transform:`translate(${mx}px,${my}px) scale(1.3)`, offset:.42},
+    {transform:`translate(${x}px,${y}px) scale(1)`, offset:.7},
+    {transform:`translate(${x + (fromLeft ? 8 : -8)}px,${y - 22}px) scale(1.06)`, offset:.83},
+    {transform:`translate(${x}px,${y}px) scale(1)`}
+  ], {duration:T, easing:"cubic-bezier(.25,.6,.35,1)", fill:"forwards"});
+  cube.animate([
+    {transform:`rotateX(${sx}deg) rotateY(${sy}deg) rotateZ(${rz0}deg)`},
+    {transform:`rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(0deg)`}
+  ], {duration:T, easing:"cubic-bezier(.15,.6,.25,1)", fill:"forwards"});
+  return path.finished.then(() => {
+    const z = w.animate([
+      {transform:`translate(${x}px,${y}px) scale(1)`},
+      {transform:`translate(${x}px,${y}px) scale(1.9)`, offset:.35},
+      {transform:`translate(${x}px,${y}px) scale(1.55)`}
+    ], {duration:650, easing:"ease-out", fill:"forwards"});
+    w.querySelector(".dnum").classList.add("on");
+    try { navigator.vibrate && navigator.vibrate(25); } catch (e) {}
+    return z.finished.then(() => w);
+  });
+}
+function terrScreen(t) {
+  const pt = svg.node().createSVGPoint(); pt.x = P[t][0]; pt.y = P[t][1];
+  const q = pt.matrixTransform(gRoot.node().getScreenCTM()); return [q.x, q.y];
+}
+// cada dado cai do lado de fora do seu território (atacante de um lado, defensor do outro), sem se sobrepor
+function diceSpot(from, to, atk) {
+  const [fx, fy] = terrScreen(from), [tx, ty] = terrScreen(to);
+  const dx = tx - fx, dy = ty - fy;
+  if (Math.abs(dx) >= Math.abs(dy) * .6) { const s = Math.sign(dx) || 1; return atk ? [fx - s * 78 - 27, fy - 27] : [tx + s * 78 - 27, ty - 27]; }
+  const s = Math.sign(dy) || 1; return atk ? [fx - 27, fy - s * 78 - 27] : [tx - 27, ty + s * 78 - 27];
+}
+// ---- câmera e foco no ataque
+let focusTerr = null, savedT = null, unfocusT = null, animQ = Promise.resolve();
+const enqueue = fn => (animQ = animQ.then(fn).catch(() => {}));
+function focusBattle(from, to) {
+  clearTimeout(unfocusT);
+  focusTerr = [from, to]; paint();
+  if (!savedT) savedT = d3.zoomTransform(svg.node());
+  const cx = (P[from][0] + P[to][0]) / 2, cy = (P[from][1] + P[to][1]) / 2;
+  const dx = Math.abs(P[from][0] - P[to][0]) + 30, dy = Math.abs(P[from][1] - P[to][1]) + 30;
+  const k = Math.max(1.6, Math.min(5, VBW / dx / 2.2, VBH / dy / 3));
+  const t = d3.zoomIdentity.translate(VBW / 2 - k * cx, VBH * .55 - k * cy).scale(k);
+  svg.transition().duration(650).call(zoom.transform, t);
+  return new Promise(res => setTimeout(res, 680));
+}
+function unfocus() {
+  focusTerr = null; clearDice(); $("battle").classList.remove("on"); paint();
+  if (savedT) { svg.transition().duration(700).call(zoom.transform, savedT); savedT = null; }
+}
+function battleHeader(by, def, from, to, g, aTxt, dTxt, res) {
+  const ac = COLORS[g.col[by]].f, dc = COLORS[g.col[def]].f;
   const el = $("battle");
-  const pairs = Math.min(b.a.length, b.d.length);
-  const rollRow = (arr, cls, other, att) => arr.map((v, i) => {
-    let lose = false; if (i < pairs) lose = att ? !(v > other[i]) : (other[i] > v);
-    return dieHTML(v, cls + " rolling" + (i < pairs && lose ? " L" : ""));
-  }).join("");
-  el.innerHTML = `<div class="bt">${esc(g.names[b.by])} ⚔️ ${esc(TI[b.to].n)}${b.rounds > 1 ? ` · ${b.rounds} rolagens` : ""}</div>
-    <div class="drow">${rollRow(b.a, "a", b.d, true)}<span style="margin:0 6px;color:#94a3b8">x</span>${rollRow(b.d, "d", b.a, false)}</div>
-    <div class="res" id="bRes" style="visibility:hidden">Atacante −${b.al} · Defensor −${b.dl}${b.conq ? " · 🏳️ Conquistado!" : ""}</div>`;
+  el.innerHTML = `<div class="bh">⚔️ <b style="color:${ac}">${esc(g.names[by])}</b> ataca <b style="color:${dc}">${esc(g.names[def])}</b></div>
+    <div class="bs">(${esc(TI[from].n)} x ${esc(TI[to].n)})</div>
+    <div class="score"><span class="sv" id="svA" style="color:${ac}">${aTxt}</span><span>-</span><span class="sv" id="svD" style="color:${dc}">${dTxt}</span></div>
+    <div class="verdict" id="bVer"></div><div class="res" id="bRes" style="text-align:center;font-size:13px;color:var(--mut)">${res || ""}</div>`;
   el.classList.add("on");
-  const dice = el.querySelectorAll(".die"); const finals = [...b.a, ...b.d];
-  let spins = 0;
-  const spin = setInterval(() => {
-    spins++;
-    dice.forEach((d, i) => { const n = spins < 7 ? roll() : finals[i]; d.querySelectorAll("i").forEach((p, j) => p.classList.toggle("v", PIPS[n].includes(j))); });
-    if (spins >= 7) {
-      clearInterval(spin);
-      dice.forEach(d => { d.classList.remove("rolling"); if (d.classList.contains("L")) d.classList.add("lose"); });
-      const r = $("bRes"); if (r) r.style.visibility = "visible";
+}
+// 1ª parte: o atacante jogou o dado; o defensor ainda vai jogar
+function showDuelPending(D, g, animate) {
+  clearTimeout(unfocusT);
+  const nm = x => esc(g.names[x]);
+  enqueue(async () => {
+    clearDice();
+    battleHeader(D.by, D.def, D.from, D.to, g, "?", "?", `${nm(D.by)} está jogando o dado…`);
+    await focusBattle(D.from, D.to);
+    if (animate) { const [x, y] = diceSpot(D.from, D.to, true); await throwDie(D.a, "a", x, y, true); }
+    const sa = $("svA"); if (sa) sa.textContent = D.a;
+    const r = $("bRes"); if (r) r.innerHTML = `${nm(D.by)} tirou <b style="color:var(--txt)">${D.a}</b>. Aguardando <b style="color:var(--txt)">${nm(D.def)}</b> jogar o dado…`;
+  });
+}
+// 2ª parte: o defensor jogou; mostra a conta (ex.: 6-5 atacante ganha) e quem perdeu soldado
+function showBattle(b, g) {
+  const nm = x => esc(g.names[x]);
+  const a = b.a[0], d = b.d[0], atkWins = b.dl > 0;
+  enqueue(async () => {
+    if (!focusTerr || focusTerr[0] !== b.from || focusTerr[1] !== b.to || !$("svA")) {
+      battleHeader(b.by, b.def, b.from, b.to, g, a, "?", ""); await focusBattle(b.from, b.to);
     }
-  }, 80);
-  clearTimeout(battleT); battleT = setTimeout(() => el.classList.remove("on"), 3200);
+    const r = $("bRes"); if (r) r.innerHTML = `${nm(b.def)} ${b.auto ? "demorou: dado jogado automaticamente" : "está jogando o dado"}…`;
+    const [x, y] = diceSpot(b.from, b.to, false); await throwDie(d, "d", x, y, false);
+    const sa = $("svA"), sd = $("svD"), ver = $("bVer"), rr = $("bRes");
+    if (sa) { sa.textContent = a; sa.classList.add(atkWins ? "win" : "lose"); }
+    if (sd) { sd.textContent = d; sd.classList.add(atkWins ? "lose" : "win"); }
+    if (ver) ver.innerHTML = `${a} - ${d} · ${atkWins ? "ATACANTE GANHA ✅" : (a === d ? "EMPATE: DEFENSOR GANHA 🛡️" : "DEFENSOR GANHA 🛡️")}`;
+    if (rr) rr.innerHTML = b.conq ? `🏳️ <b style="color:var(--txt)">${nm(b.by)}</b> conquistou <b style="color:var(--txt)">${esc(TI[b.to].n)}</b>!`
+      : `💀 <b style="color:var(--txt)">${atkWins ? nm(b.def) : nm(b.by)}</b> perde 1 soldado em ${esc(TI[atkWins ? b.to : b.from].n)}`;
+    floatText(atkWins ? b.to : b.from, "−1 💀", "#dc2626");
+    if (b.conq) floatText(b.to, "🏳️", "#16a34a");
+    try { navigator.vibrate && navigator.vibrate(atkWins === (b.by === uid) ? 40 : [30, 40, 30]); } catch (e) {}
+    clearTimeout(unfocusT); unfocusT = setTimeout(unfocus, 2600);
+    await new Promise(res => setTimeout(res, 900));
+  });
+}
+
+/* ================= TELAS GRANDES (sua vez, continente, ordem) ================= */
+const bigQ = []; let bigOn = false, bigT = null;
+function showBig(html, ms) { bigQ.push({html, ms}); if (!bigOn) nextBig(); }
+function nextBig() {
+  const it = bigQ.shift();
+  if (!it) { bigOn = false; $("bigPop").classList.remove("on"); return; }
+  bigOn = true; $("bigBox").innerHTML = it.html; $("bigPop").classList.add("on");
+  const b = $("bigOk"); if (b) b.onclick = closeBig;
+  clearTimeout(bigT); bigT = setTimeout(closeBig, it.ms || 6000);
+}
+function closeBig() { clearTimeout(bigT); $("bigPop").classList.remove("on"); setTimeout(nextBig, 180); }
+$("bigPop").addEventListener("click", e => { if (e.target.id === "bigPop") closeBig(); });
+function cardTxt(c) { return c.t === "*" ? `${SYM[3]} Coringa` : `${SYM[c.s]} ${esc(TI[c.t].n)}`; }
+function showTurnScreen(g) {
+  const u = uid, n = owned(g, u).length, base = Math.max(3, Math.floor(n / 2));
+  const {r, bonus, pen} = calcReinf(g, u);
+  const nc = (g.newCard || {})[u]; const hand = g.cards[u] || [];
+  let canTrade = false; for (let i = 0; i < hand.length; i++) for (let j = i + 1; j < hand.length; j++) for (let k = j + 1; k < hand.length; k++) if (validSet([hand[i], hand[j], hand[k]])) canTrade = true;
+  const pr = objProgress(g, u);
+  showBig(`<div class="bp-title">SUA VEZ</div>
+    <div class="bp-sub">Distribua suas <b>${g.reinf}</b> tropa${g.reinf > 1 ? "s" : ""}</div>
+    <div class="bp-small">${n} territórios → +${base}${bonus.length ? " · bônus: " + bonus.join(", ") : ""}${pen ? " · ⚠️ −1 por não atacar" : ""}${g.round === 1 ? " · 1ª rodada: sem ataques" : ""}</div>
+    <div class="bp-box"><h4>🃏 Carta</h4>
+      <div>${nc ? `Você ganhou a carta <span class="minicard">${cardTxt(nc)}</span>` : "Nenhuma carta nova no último turno (conquiste 1 território no seu turno para ganhar)."}</div>
+      <div class="bp-small">Você tem ${hand.length} carta${hand.length === 1 ? "" : "s"}.${canTrade ? ` <b style="color:var(--acc)">Dá pra trocar 3 por ${tradeValue(g.trades + 1)} tropas!</b>` : ""}${hand.length >= 5 ? " A troca é obrigatória com 5 cartas." : ""}</div>
+    </div>
+    <div class="bp-box"><h4>🎯 Sua missão${isDuo(g) ? " (da dupla)" : ""}</h4>
+      <div>${esc(objText(g, u))}</div>
+      <div class="bar"><i style="width:${Math.round(pr.pct * 100)}%"></i></div>
+      <div class="bp-small" style="text-align:right;margin-top:-4px">${Math.round(pr.pct * 100)}% concluída</div>
+      ${pr.items.map(it => `<div class="chk">${it.ok ? "✅" : "⬜"} ${esc(it.t)}</div>`).join("")}
+    </div>
+    <button class="btn pri" id="bigOk">BORA! ⚔️</button>`, 12000);
+  try { navigator.vibrate && navigator.vibrate([180, 90, 180]); } catch (e) {}
+}
+function showContAnn(A, g) {
+  const who = isDuo(g) ? `${teamName(g, A.u)} (${mates(g, A.u).map(x => esc(g.names[x])).join(" e ")})` : esc(g.names[A.u]);
+  const mineSide = mates(g, A.u).includes(uid);
+  const bonus = A.cs.reduce((s, c) => s + CONT[c].b, 0);
+  const cn = A.cs.map(c => CONT[c].n.toUpperCase()).join(" e ");
+  const plural = isDuo(g);
+  showBig(`<div style="font-size:54px">🌍</div>
+    <div class="bp-sub" style="font-size:22px">${mineSide ? (plural ? "Sua dupla dominou" : "Você dominou") : `<span style="color:${COLORS[g.col[A.u]].f}">${who}</span> dominou`}</div>
+    <div class="bp-title" style="font-size:38px">${cn}</div>
+    <div class="bp-sub" style="font-size:16px">${mineSide ? `A partir da próxima rodada ${plural ? "vocês recebem" : "você recebe"} <b style="font-size:20px">+${bonus}</b> tropas de bônus. Segure esse continente!` : `A partir da próxima rodada ${plural ? "eles vão" : "ele vai"} receber <b style="font-size:20px">+${bonus}</b> tropas de bônus. <span style="color:#f87171;white-space:nowrap">Detenha-${plural ? "os" : "o"}!</span>`}</div>
+    <button class="btn pri" id="bigOk">OK</button>`, 5500);
+}
+function showOrderAnn(g) {
+  const L = g.orderAnn.list;
+  showBig(`<div style="font-size:46px">🎲</div><div class="bp-title" style="font-size:34px">ORDEM DEFINIDA</div>
+    <div class="list" style="text-align:left">${L.map(([u, v], i) => `<div class="it"><b style="font-size:18px;width:28px">${i + 1}º</b><i class="dot" style="background:${COLORS[g.col[u]].f}"></i>${esc(g.names[u])}${u === uid ? " (você)" : ""}<span class="r">🎲 <b style="color:var(--txt);font-size:16px">${v}</b></span></div>`).join("")}</div>
+    <div class="bp-small">Quem tirou mais começa. Empate: quem jogou primeiro.</div>
+    <button class="btn pri" id="bigOk">Começar!</button>`, 5000);
 }
 
 /* ================= RENDER ================= */
-let firstSnap = true, lastTurnKey = "", popT = null;
+let firstSnap = true, lastTurnKey = "", popT = null, lastOrderTs = null, lastAnnTs = null, myRollShown = false;
 function showTurnPop(g) {
   $("tpSub").textContent = `Distribua suas ${g.reinf} tropa${g.reinf > 1 ? "s" : ""}`;
   $("tpNote").textContent = g.round === 1 ? "1ª rodada: ainda não há ataques" : ((g.passive[uid] || 0) >= PASSIVE_LIMIT ? "⚠️ Você recebeu 1 tropa a menos por não atacar" : "");
@@ -1085,7 +1412,7 @@ function showTurnPop(g) {
   try { navigator.vibrate && navigator.vibrate([180, 90, 180]); } catch (e) {}
   clearTimeout(popT); popT = setTimeout(() => $("turnPop").classList.remove("on"), 2800);
 }
-$("turnPop").onclick = () => $("turnPop").classList.remove("on");
+
 function render() {
   if (!R) return show("home");
   if (R.meta.status === "lobby") return renderLobby();
@@ -1109,15 +1436,25 @@ function renderGame() {
   const g = R.game; if (!g) return;
   const me = uid, mine = cur(g) === me && !g.winner;
   // aviso de vez
+  if (g.orderAnn && g.orderAnn.ts !== lastOrderTs) { if (!firstSnap) showOrderAnn(g); lastOrderTs = g.orderAnn.ts; }
   const turnKey = g.started === false ? "wait" : g.round + ":" + g.turnIdx;
-  if (mine && g.started !== false && turnKey !== lastTurnKey && g.phase === "deploy" && g.reinf > 0) showTurnPop(g);
+  if (mine && g.started !== false && turnKey !== lastTurnKey && g.phase === "deploy" && g.reinf > 0) showTurnScreen(g);
   lastTurnKey = turnKey;
-  // confirmação do objetivo
-  if (g.started === false && !g.winner) {
-    if (!(g.ready || {})[uid] && modalKind !== "ready") openReady();
-  } else if (modalKind === "ready") closeModal();
+  // início: objetivo + dado da ordem
+  const myRoll = (g.ready || {})[uid];
+  if (myRoll && !myRollShown && g.started === false) { myRollShown = true; throwDie(myRoll.v, "a", innerWidth / 2 - 27, innerHeight * .28, true).then(w => setTimeout(() => w.remove(), 1500)); }
+  if (g.started === false && !g.winner) openReady();
+  else if (modalKind === "ready") closeModal();
+  // continente dominado
+  if (g.ann && g.ann.ts !== lastAnnTs) { if (!firstSnap) { const A = g.ann; setTimeout(() => showContAnn(A, g), 3200); } lastAnnTs = g.ann.ts; }
   // batalha
-  if (g.battle && g.battle.ts !== lastBattleTs) { if (!firstSnap) showBattle(g.battle, g); lastBattleTs = g.battle.ts; }
+  if (g.duel && g.duel.ts !== lastDuelTs) { showDuelPending(g.duel, g, !firstSnap); lastDuelTs = g.duel.ts; }
+  if (g.battle && g.battle.ts !== lastBattleTs) {
+    if (!firstSnap) { showBattle(g.battle, g); if (g.battle.by === uid) { rollLock = Date.now() + 3000; setTimeout(() => modalKind === "atk" && renderAttack(), 3050); } }
+    lastBattleTs = g.battle.ts;
+  }
+  if (g.duel && g.duel.def === uid && modalKind !== "def") openDefend();
+  if (modalKind === "def" && !(g.duel && g.duel.def === uid)) closeModal();
   firstSnap = false;
   if (!mine || g.phase === "deploy") sel = null;
   if (sel && g.owner[sel] !== me) sel = null;
@@ -1134,20 +1471,20 @@ function renderGame() {
   // banner
   const cn = esc(g.names[cur(g)]); let txt = "", warn = "";
   const waitList = g.started === false ? g.order.filter(u => !(g.ready || {})[u]).map(u => esc(g.names[u])) : [];
-  if (g.started === false && !g.winner) txt = `🎯 Aguardando confirmarem o objetivo: <b>${waitList.join(", ")}</b>`;
+  if (g.started === false && !g.winner) txt = `🎲 Jogando o dado para definir a ordem. Falta: <b>${waitList.join(", ")}</b>`;
   else if (g.winner) txt = isDuo(g) ? `🏆 <b>${teamName(g, g.winner)}</b> (${mates(g, g.winner).map(x => esc(g.names[x])).join(" e ")}) venceu! Objetivo: ${esc(objText(g, g.winner))}` : `🏆 <b>${esc(g.names[g.winner])}</b> venceu! Objetivo: ${esc(objText(g, g.winner))}`;
   else if (g.elim[me]) txt = `Você foi eliminado. Assistindo… Vez de <b>${cn}</b>.`;
   else if (!mine) txt = `Vez de <b>${cn}</b> · ${{deploy:"distribuindo tropas", attack:"atacando", move:"remanejando"}[g.phase]}`;
   else if (g.phase === "deploy") txt = (g.cards[me].length >= 5) ? "Você tem 5 cartas: <b>troque 3</b> antes de distribuir (🃏)." : (g.reinf > 0 ? `Sua vez! Distribua <b>${g.reinf}</b> tropa(s): toque nos seus territórios.${g.round === 1 ? " (1ª rodada: sem ataques)" : ""}` : (g.round === 1 ? "Tropas distribuídas. Toque em <b>Remanejar</b> (1ª rodada não tem ataque)." : "Tropas distribuídas. Toque em <b>Atacar</b>."));
   else if (g.phase === "attack") txt = sel ? `Atacando de <b>${esc(TI[sel].n)}</b>: toque num vizinho inimigo.` : "<b>Ataque:</b> toque num território seu com 2+ tropas.";
-  else txt = sel ? `Movendo de <b>${esc(TI[sel].n)}</b>: toque num vizinho seu.` : "<b>Remanejamento:</b> toque num território seu para mover tropas, ou encerre o turno.";
+  else txt = sel ? `Movendo de <b>${esc(TI[sel].n)}</b>: toque num vizinho seu.` : "<b>Remanejamento:</b> toque num território seu para mover tropas. Quando terminar, toque em <b>Próximo turno</b>.";
   const pas = g.passive[me] || 0;
   if (!g.winner && !g.elim[me] && pas >= 5) warn = pas >= PASSIVE_LIMIT ? `⚠️ ${pas} rodadas sem atacar: você está recebendo 1 tropa a menos por rodada. Ataque para zerar!` : `⚠️ ${pas} rodadas sem atacar. Com ${PASSIVE_LIMIT}, você passa a receber 1 tropa a menos.`;
   $("gBanner").innerHTML = txt; $("gWarn").textContent = warn;
   const nb = $("bNext");
   if (g.winner) { nb.style.display = ""; nb.textContent = "Nova partida"; nb.disabled = false; }
   else if (g.started === false) nb.style.display = "none";
-  else if (mine) { nb.style.display = ""; nb.textContent = {deploy: g.round === 1 ? "Remanejar ➜" : "Atacar ➜", attack:"Remanejar ➜", move:"Encerrar turno"}[g.phase]; nb.disabled = g.phase === "deploy" && (g.reinf > 0 || g.cards[me].length >= 5); }
+  else if (mine) { nb.style.display = ""; nb.textContent = {deploy: g.round === 1 ? "Remanejar ➜" : "Atacar ➜", attack:"Remanejar ➜", move:"Próximo turno ➜"}[g.phase]; nb.disabled = g.phase === "deploy" && (g.reinf > 0 || g.cards[me].length >= 5); }
   else nb.style.display = "none";
   // modais dependentes do estado
   if (modalKind === "atk") renderAttack();
@@ -1161,7 +1498,8 @@ setInterval(() => {
   const g = R && R.game; if (!g || !R.meta || R.meta.status !== "playing") return;
   if (g.winner) { $("gTimer").textContent = "fim"; $("gTimer").classList.remove("low"); return; }
   if (g.started === false) { const w = Math.max(0, Math.ceil((g.readyBy - now()) / 1000)); $("gTimer").textContent = "⏳ " + w + "s"; $("gTimer").classList.remove("low"); checkTimeout(); return; }
-  const ms = Math.max(0, g.deadline - now()); const s = Math.ceil(ms / 1000);
+  const ms = Math.max(0, g.deadline - (g.duel ? Math.min(now(), g.duel.ts + DEF_MS) : now())); const s = Math.ceil(ms / 1000);
+  if (g.duel) { const left = Math.max(0, Math.ceil((g.duel.ts + DEF_MS - now()) / 1000)); const c1 = $("defCount"), c2 = $("defCount2"); if (c1) c1.textContent = `(automático em ${left}s)`; if (c2) c2.textContent = left + "s"; }
   $("gTimer").textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
   $("gTimer").classList.toggle("low", s <= 20);
   checkTimeout();
@@ -1192,6 +1530,7 @@ $("bNext").onclick = async () => {
 svg.on("click", () => { if (sel) { sel = null; paint(); renderGame(); } });
 
 /* ================= INÍCIO ================= */
+document.body.appendChild($("battle")); // a tela do duelo fica acima de tudo, inclusive da janela de ataque
 $("name").value = localStorage.getItem("cm_name") || "";
 const urlCode = new URLSearchParams(location.search).get("sala");
 if (urlCode) $("codeIn").value = urlCode.toUpperCase();
