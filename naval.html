@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#cfe9ff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Batalha Naval</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Lilita+One&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#cfe9ff;--panel:#ffffff;--panel2:#e6f3ff;--line:#a9d3f5;--txt:#16365c;--mut:#5a7ea3;--acc:#3a97e6;--accd:#1f6fb8;--ok:#22c55e;--sea:#4aa3e6;--sead:#3289cf}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font-family:"Baloo 2",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overscroll-behavior:none;-webkit-user-select:none;user-select:none}
+button{font:inherit;color:inherit;border:0;cursor:pointer;background:none}
+input{font:inherit}
+.screen{position:fixed;inset:0;display:none;flex-direction:column}
+.screen.on{display:flex}
+.center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:14px;overflow:auto}
+.logo{font-family:"Lilita One",system-ui,sans-serif;font-size:56px;text-align:center;line-height:.95;letter-spacing:2px;color:var(--accd);text-shadow:0 5px 0 rgba(22,54,92,.18)}
+.logo small{display:block;font-size:34px;color:var(--acc)}
+.sub{color:var(--mut);font-size:15px;text-align:center;max-width:320px;font-weight:600}
+.card{background:var(--panel);border:2px solid var(--line);border-radius:22px;box-shadow:0 6px 0 rgba(58,151,230,.15);padding:18px;width:100%;max-width:380px;display:flex;flex-direction:column;gap:10px}
+.inp{width:100%;padding:13px 16px;border-radius:16px;border:2px solid var(--line);background:#f5faff;color:var(--txt);font-size:16px;font-weight:600;outline:none;-webkit-user-select:text;user-select:text}
+.inp:focus{border-color:var(--acc)}
+.btn{padding:12px 16px;border-radius:16px;background:var(--panel2);border:2px solid var(--line);font-weight:700;font-size:16px;color:var(--accd);box-shadow:0 4px 0 #a9d3f5;transition:transform .08s}
+.btn:active{transform:translateY(3px);box-shadow:none}
+.btn.pri{background:var(--acc);color:#fff;border-color:var(--accd);box-shadow:0 4px 0 var(--accd)}
+.btn.red{background:#ef5350;border-color:#c62828;color:#fff;box-shadow:0 4px 0 #c62828}
+.btn:disabled{opacity:.4;cursor:default}
+.row{display:flex;gap:8px}
+.row>*{flex:1}
+.lbl{font-size:14px;color:var(--mut);font-weight:600}
+.code{font-family:"Lilita One",system-ui,sans-serif;font-size:50px;letter-spacing:10px;text-align:center;color:var(--acc)}
+.plist{display:flex;flex-direction:column;gap:8px}
+.pitem{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:var(--panel2);flex-wrap:wrap}
+.dot{width:14px;height:14px;border-radius:50%;flex:none;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.15)}
+.on-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);margin-left:auto}
+.on-dot.off{background:#94a3b8}
+.tbtn{padding:6px 11px;border-radius:999px;border:2px solid var(--line);font-size:13px;font-weight:700;background:#fff;color:var(--accd)}
+.tbtn.sel{background:var(--acc);color:#fff;border-color:var(--accd)}
+.opt{text-align:left;line-height:1.2}
+.opt small{display:block;font-size:12px;font-weight:600;opacity:.85}
+/* jogo */
+.top{display:flex;align-items:center;gap:8px;padding:8px 10px;padding-top:max(8px,env(safe-area-inset-top));background:var(--panel);border-bottom:2px solid var(--line)}
+.top .ttl{font-weight:800;font-size:15px;white-space:nowrap}
+.top .ttl small{color:var(--mut);font-weight:600}
+.timer{margin-left:auto;font-weight:800;font-variant-numeric:tabular-nums;padding:4px 12px;border-radius:999px;background:var(--panel2);font-size:15px}
+.timer.low{background:#ef5350;color:#fff}
+.ibtn{width:36px;height:36px;border-radius:12px;background:var(--panel2);color:var(--accd);border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:16px;position:relative}
+.chips{display:flex;gap:6px;padding:6px 8px;overflow-x:auto;background:var(--panel);border-bottom:2px solid var(--line);scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;display:flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:var(--panel2);font-size:13px;font-weight:700;border:2px solid transparent;white-space:nowrap}
+.chip.cur{border-color:var(--acc)}
+.chip.out{opacity:.5;text-decoration:line-through}
+.chip .dot{width:11px;height:11px;border-width:1.5px}
+#main{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;padding:8px;min-height:0;overflow:auto}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.tab{padding:5px 12px;border-radius:999px;border:2px solid var(--line);background:#fff;font-weight:700;font-size:14px;color:var(--txt);display:flex;align-items:center;gap:6px}
+.tab.sel{border-color:var(--accd);background:var(--acc);color:#fff}
+.tab.done{opacity:.55}
+.btitle{font:20px "Lilita One",system-ui,sans-serif;letter-spacing:.5px;color:var(--accd);text-align:center}
+.grid{display:grid;gap:2px;width:min(94vw,calc(100vh - 330px),520px);aspect-ratio:1;background:var(--panel);padding:6px;border-radius:16px;border:2px solid var(--line);box-shadow:0 6px 0 rgba(58,151,230,.15)}
+.lb{display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:var(--mut)}
+.cl{background:var(--sea);border-radius:5px;position:relative;display:flex;align-items:center;justify-content:center;font-size:min(4.2vw,22px);line-height:1;overflow:visible}
+.cl.click{cursor:pointer}
+.cl.click:hover{background:#6cb8ee}
+.cl.ship{background:#64748b}
+.cl.ship.selS{background:#f5b700}
+.cl.sunk{background:#334155}
+.cl.hit::after{content:"🔥"}
+.cl.miss::after{content:"";width:28%;height:28%;border-radius:50%;background:#fff;opacity:.85;box-shadow:0 0 0 3px rgba(255,255,255,.35)}
+.cl.sunk.hit::after{content:"💥"}
+.cl.aim{outline:3px solid #f5b700;outline-offset:-3px}
+.r-h0{border-radius:10px 3px 3px 10px}.r-h1{border-radius:3px 10px 10px 3px}.r-v0{border-radius:10px 10px 3px 3px}.r-v1{border-radius:3px 3px 10px 10px}
+.boom{position:absolute;inset:-60%;display:flex;align-items:center;justify-content:center;font-size:min(9vw,46px);pointer-events:none;z-index:5}
+.bottom{background:var(--panel);border-top:2px solid var(--line);padding:10px;padding-bottom:max(10px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px}
+.banner{font-size:15px;line-height:1.35;min-height:20px;text-align:center;font-weight:600}
+.banner b{color:var(--accd)}
+.acts{display:flex;gap:6px}
+.acts .btn{padding:10px 6px;font-size:14px;flex:1}
+.bigbtn{font:24px "Lilita One",system-ui,sans-serif;letter-spacing:1px;padding:13px;border-radius:20px;background:var(--acc);color:#fff;width:100%;border:2px solid var(--accd);box-shadow:0 5px 0 var(--accd)}
+.bigbtn:disabled{opacity:.4}
+#shotBar{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 96px);transform:translateX(-50%);z-index:30;background:#16365c;color:#fff;padding:9px 16px;border-radius:14px;font-weight:700;font-size:15px;display:none;max-width:92vw;text-align:center;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+#shotBar.on{display:block;animation:pop .3s ease-out}
+/* modal */
+.back{position:fixed;inset:0;background:rgba(22,54,92,.4);display:none;align-items:flex-end;justify-content:center;z-index:20}
+.back.on{display:flex}
+.sheet{background:var(--panel);border:2px solid var(--line);border-bottom:0;border-radius:22px 22px 0 0;width:100%;max-width:520px;max-height:85vh;overflow:auto;padding:16px;padding-bottom:max(16px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px}
+.sheet h3{margin:0;font:22px "Lilita One",system-ui,sans-serif;color:var(--accd)}
+.list{display:flex;flex-direction:column;gap:6px;font-size:15px}
+.list .it{padding:9px 11px;background:var(--panel2);border-radius:12px;display:flex;align-items:center;gap:8px}
+.list .it .r{margin-left:auto;color:var(--mut);font-size:14px}
+table.rk{width:100%;border-collapse:collapse;font-size:15px}
+table.rk th{font-size:12px;color:var(--mut);font-weight:700;padding:6px 4px;text-align:center}
+table.rk td{padding:9px 4px;text-align:center;border-top:2px solid var(--panel2)}
+table.rk td:first-child,table.rk th:first-child{text-align:left}
+table.rk tr.top1 td{background:#fff6cc}
+.msgs{display:flex;flex-direction:column;gap:6px;max-height:42vh;min-height:120px;overflow-y:auto;padding:4px 2px;-webkit-user-select:text;user-select:text}
+.msg{max-width:82%;padding:7px 11px;border-radius:14px;background:var(--panel2);font-size:15px;align-self:flex-start;line-height:1.3;word-wrap:break-word}
+.msg.me{align-self:flex-end;background:#d6ecff;border:2px solid var(--line)}
+.msg small{display:block;color:var(--mut);font-size:11px}
+.quick{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.quick::-webkit-scrollbar{display:none}
+.quick button{flex:none;padding:6px 11px;border-radius:999px;background:var(--panel2);font-size:13px;font-weight:700;border:2px solid var(--line)}
+.badge{position:absolute;top:-6px;right:-6px;min-width:18px;padding:0 5px;border-radius:999px;background:#ef5350;color:#fff;font-size:11px;font-weight:800;line-height:18px}
+#toast{position:fixed;left:50%;bottom:140px;transform:translateX(-50%);background:#16365c;color:#fff;padding:10px 16px;border-radius:12px;font-size:15px;font-weight:600;z-index:50;display:none;max-width:90vw;text-align:center}
+#toast.on{display:block}
+/* dado 3D */
+#diceLayer{position:fixed;inset:0;pointer-events:none;z-index:40;perspective:800px}
+.dw{position:absolute;left:0;top:0;width:54px;height:54px;will-change:transform}
+.dshadow{position:absolute;left:5px;top:50px;width:44px;height:11px;border-radius:50%;background:rgba(0,0,0,.35);filter:blur(3px)}
+.cube{width:54px;height:54px;position:relative;transform-style:preserve-3d}
+.face{position:absolute;inset:0;border-radius:11px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:8px;box-shadow:inset 0 0 0 2px rgba(0,0,0,.28),inset 0 -4px 0 rgba(0,0,0,.15);backface-visibility:hidden;background:#f8fafc}
+.face i{width:9px;height:9px;border-radius:50%;place-self:center;visibility:hidden;background:#111}.face i.v{visibility:visible}
+.f1{transform:translateZ(27px)}.f6{transform:rotateY(180deg) translateZ(27px)}.f3{transform:rotateY(90deg) translateZ(27px)}.f4{transform:rotateY(-90deg) translateZ(27px)}.f5{transform:rotateX(90deg) translateZ(27px)}.f2{transform:rotateX(-90deg) translateZ(27px)}
+.dnum{position:absolute;left:50%;top:-38px;transform:translateX(-50%) scale(.4);font:32px "Lilita One",system-ui,sans-serif;color:#fff;text-shadow:0 3px 0 #000,0 0 8px rgba(0,0,0,.8);opacity:0;transition:all .25s cubic-bezier(.3,1.6,.5,1)}
+.dnum.on{opacity:1;transform:translateX(-50%) scale(1)}
+/* telas grandes */
+#bigPop{position:fixed;inset:0;z-index:45;display:none;align-items:center;justify-content:center;background:rgba(22,54,92,.45);padding:18px}
+#bigPop.on{display:flex}
+.bp{width:min(420px,100%);max-height:92vh;overflow:auto;background:linear-gradient(180deg,#ffffff,#e6f3ff);border:3px solid var(--acc);border-radius:24px;padding:20px 18px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.35);animation:pop .4s ease-out;display:flex;flex-direction:column;gap:12px}
+.bp-title{font:46px/1 "Lilita One",system-ui,sans-serif;color:var(--acc);letter-spacing:2px;text-shadow:0 4px 0 var(--accd)}
+.bp-sub{font-weight:700;font-size:19px}
+.bp-small{font-size:14px;color:var(--mut);font-weight:600}
+.bp .btn{font:20px "Lilita One",system-ui,sans-serif;letter-spacing:.5px;padding:12px}
+@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
+#shotBar.on{animation:none}
+</style>
+</head>
+<body>
+
+<!-- INÍCIO -->
+<div class="screen on" id="home">
+  <div class="center">
+    <div class="logo">⚓ BATALHA<small>NAVAL</small></div>
+    <div class="sub">De 2 a 4 jogadores, ou dupla contra dupla. Online e ao vivo.</div>
+    <div class="card">
+      <input class="inp" id="name" maxlength="14" placeholder="Seu nome">
+      <button class="btn pri" id="bCreate">Criar sala</button>
+    </div>
+    <div class="card">
+      <div class="lbl">Entrar numa sala</div>
+      <div class="row"><input class="inp" id="codeIn" maxlength="4" placeholder="CÓDIGO" style="text-transform:uppercase;letter-spacing:4px;text-align:center"><button class="btn" id="bJoin" style="flex:.6">Entrar</button></div>
+    </div>
+    <button class="btn" id="bRank" style="width:100%;max-width:380px">🏆 Ranking da Batalha Naval</button>
+    <a href="index.html" class="btn" style="width:100%;max-width:380px;text-align:center;text-decoration:none">⬅ Menu de jogos</a>
+    <div class="sub" id="authMsg">Conectando…</div>
+  </div>
+</div>
+
+<!-- SALA -->
+<div class="screen" id="lobby">
+  <div class="center">
+    <div class="lbl">Código da sala</div>
+    <div class="code" id="lCode">----</div>
+    <button class="btn" id="bShare">Copiar convite</button>
+    <div class="card">
+      <div class="lbl">Tamanho da partida</div>
+      <div class="row" id="lSize">
+        <button class="btn opt" data-s="8">⚡ Partida rápida<small>mar 8x8 · 4 navios</small></button>
+        <button class="btn opt" data-s="10">🐢 Partida mais longa<small>mar 10x10 · 5 navios</small></button>
+      </div>
+      <div class="lbl">Modo de jogo</div>
+      <div class="row" id="lMode"><button class="btn" data-m="solo">Todos contra todos</button><button class="btn" data-m="duo">Dupla x Dupla</button></div>
+      <div class="lbl">Jogadores (<span id="lCount">0</span>/4)</div>
+      <div class="plist" id="lPlayers"></div>
+      <button class="btn" id="bShuffle" style="display:none">🔀 Sortear duplas</button>
+    </div>
+    <button class="btn pri" id="bStart" style="width:100%;max-width:380px">Começar partida</button>
+    <div class="sub" id="lWait"></div>
+    <button class="btn" id="bLeaveLobby" style="width:100%;max-width:380px">Sair da sala</button>
+  </div>
+</div>
+
+<!-- JOGO -->
+<div class="screen" id="game">
+  <div class="top">
+    <div class="ttl" id="gTitle">Sala ----</div>
+    <div class="timer" id="gTimer">1:00</div>
+    <button class="ibtn" id="bChat" aria-label="Chat da dupla" style="display:none">💬<span id="nChat"></span></button>
+    <button class="ibtn" id="bMenu" aria-label="Menu">☰</button>
+  </div>
+  <div class="chips" id="gChips"></div>
+  <div id="main">
+    <div class="tabs" id="tabs"></div>
+    <div class="btitle" id="bTitle"></div>
+    <div class="grid" id="grid"></div>
+  </div>
+  <div class="bottom">
+    <div class="banner" id="gBanner"></div>
+    <div class="acts" id="acts"></div>
+  </div>
+</div>
+
+<div class="back" id="modal"><div class="sheet" id="sheet"></div></div>
+<div id="toast"></div>
+<div id="shotBar"></div>
+<div id="diceLayer"></div>
+<div id="bigPop"><div class="bp" id="bigBox"></div></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getDatabase, ref, set, get, update, onValue, runTransaction, onDisconnect, push, query, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+/* ================= CONFIG (mesmo Firebase do Conquista Mundial e do Ludo) ================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyDuYXPb-vzdvZLnHeX1-E2ex7SiBTWYprE",
+  authDomain: "battle-world-ce05d.firebaseapp.com",
+  databaseURL: "https://battle-world-ce05d-default-rtdb.firebaseio.com",
+  projectId: "battle-world-ce05d",
+  storageBucket: "battle-world-ce05d.firebasestorage.app",
+  messagingSenderId: "665723143522",
+  appId: "1:665723143522:web:4f38528322851e9889d83b"
+};
+const ROOT = "naval";             // tudo da Batalha Naval fica na pasta "naval"
+const TURN_MS = 60000;            // tempo do turno (1 tiro em cada adversário)
+const SETUP_MS = 150000;          // tempo para posicionar a frota
+const ROLL_MS = 60000;            // tempo para jogar o dado da ordem
+const FRIENDS = ["Augusto", "Miguel", "Larissa", "Jardelson"];
+const FLEETS = {
+  8:  [[4, "Encouraçado"], [3, "Cruzador"], [3, "Submarino"], [2, "Destroier"]],
+  10: [[5, "Porta-aviões"], [4, "Encouraçado"], [3, "Cruzador"], [3, "Submarino"], [2, "Destroier"]]
+};
+const PCOL = [{n:"Azul", f:"#1E88E5"}, {n:"Vermelho", f:"#E53935"}, {n:"Verde", f:"#43A047"}, {n:"Laranja", f:"#FB8C00"}, {n:"Ciano", f:"#00ACC1"}, {n:"Roxo", f:"#8E24AA"}];
+const LETTERS = "ABCDEFGHIJ";
+
+/* ================= FIREBASE ================= */
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+let uid = null, offset = 0, roomCode = null, R = null, unsubRoom = null, unsubConn = null;
+const now = () => Date.now() + offset;
+onValue(ref(db, ".info/serverTimeOffset"), s => offset = s.val() || 0);
+
+/* ================= UTIL ================= */
+const $ = id => document.getElementById(id);
+const arr = x => x ? (Array.isArray(x) ? x.filter(v => v !== null && v !== undefined) : Object.values(x)) : [];
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+let toastT = null;
+function toast(msg, ms = 2600) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), ms); }
+function show(id) { ["home","lobby","game"].forEach(s => $(s).classList.toggle("on", s === id)); }
+// dado justo: cada número de 1 a 6 com exatamente a mesma chance (gerador criptográfico, sem viés)
+function fairRoll() { const b = new Uint8Array(1); while (true) { crypto.getRandomValues(b); if (b[0] < 252) return (b[0] % 6) + 1; } }
+function randInt(n) { const b = new Uint32Array(1); const lim = Math.floor(4294967296 / n) * n; while (true) { crypto.getRandomValues(b); if (b[0] < lim) return b[0] % n; } }
+const cellName = (r, c) => LETTERS[c] + (r + 1);
+
+/* ================= NOMES (easter eggs + ranking, iguais ao Ludo) ================= */
+function canon(txt) {
+  const map = {"1":"i","!":"i","|":"i","l":"i","y":"i","3":"e","€":"e","4":"a","@":"a","0":"o","5":"s","$":"s","z":"s","7":"t","+":"t","9":"g","6":"g","v":"u","w":"u"};
+  let s = (txt || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  s = [...s].map(c => map[c] || c).join("").replace(/[^a-z]/g, "");
+  s = s.replace(/(.)\1+/g, "$1").replace(/th/g, "t").replace(/gu/g, "g").replace(/h/g, "");
+  return s;
+}
+const rev = t => [...(t || "")].reverse().join("");
+const isMiguel = n => canon(n).includes("migei") || canon(rev(n)).includes("migei");
+const isThomas = n => canon(n).includes("tomas") || canon(rev(n)).includes("tomas");
+const funName = n => isMiguel(n) && !n.includes("🦆") ? n + " 🦆😭" : n;
+const THOMAS_MSG = "🎖️ Esse nome já está reservado para um futuro general!";
+function lev(a, b) {
+  const m = a.length, n = b.length; const d = Array.from({length: m + 1}, (_, i) => [i, ...Array(n).fill(0)]);
+  for (let j = 1; j <= n; j++) d[0][j] = j;
+  for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+  return d[m][n];
+}
+function rankName(typed) {
+  const clean = (typed || "").replace(/🦆|😭/g, "").trim();
+  const c = canon(clean); if (!c) return clean || "Sem nome";
+  let best = null, bestScore = 9;
+  FRIENDS.forEach(f => {
+    const fc = canon(f); let score;
+    if (c === fc || c.includes(fc) || (c.length >= 3 && fc.startsWith(c)) || (c.length >= 4 && fc.includes(c))) score = 0;
+    else {
+      const dFull = lev(c, fc), okFull = dFull <= Math.max(1, Math.floor(fc.length * .45));
+      const dPre = c.length >= 5 ? lev(c, fc.slice(0, c.length)) : 99, okPre = dPre <= 1;
+      score = okFull ? dFull / fc.length : (okPre ? dPre / c.length : 9);
+    }
+    if (score < bestScore) { bestScore = score; best = f; }
+  });
+  return best || (clean.charAt(0).toUpperCase() + clean.slice(1));
+}
+const rankKey = n => n.replace(/[.#$\[\]\/]/g, "_");
+
+/* ================= FROTA ================= */
+const shipCells = s => Array.from({length: s.len}, (_, k) => s.d === "h" ? [s.r, s.c + k] : [s.r + k, s.c]);
+function fits(fleet, idx, s, N) {
+  const cells = shipCells(s);
+  if (cells.some(([r, c]) => r < 0 || c < 0 || r >= N || c >= N)) return false;
+  const used = new Set(); fleet.forEach((o, k) => { if (k !== idx && o) shipCells(o).forEach(([r, c]) => used.add(r + "_" + c)); });
+  return cells.every(([r, c]) => !used.has(r + "_" + c));
+}
+function randomFleet(N) {
+  for (let tries = 0; tries < 50; tries++) {
+    const fleet = []; let ok = true;
+    for (const [len, name] of FLEETS[N]) {
+      let placed = false;
+      for (let t = 0; t < 400 && !placed; t++) {
+        const s = {len, name, d: randInt(2) ? "h" : "v", r: randInt(N), c: randInt(N)};
+        if (fits(fleet, -1, s, N)) { fleet.push(s); placed = true; }
+      }
+      if (!placed) { ok = false; break; }
+    }
+    if (ok) return fleet;
+  }
+  return null;
+}
+function validFleet(fleet, N) {
+  const def = FLEETS[N]; if (!Array.isArray(fleet) || fleet.length !== def.length) return false;
+  return fleet.every((s, i) => s && s.len === def[i][0] && (s.d === "h" || s.d === "v") && fits(fleet, i, s, N));
+}
+const shipAt = (fleet, r, c) => fleet.findIndex(s => shipCells(s).some(([a, b]) => a === r && b === c));
+
+/* ================= REGRAS ================= */
+function norm(g) {
+  g.order = arr(g.order); g.log = arr(g.log); g.out = arr(g.out); g.places = arr(g.places);
+  g.team = g.team || {}; g.ready = g.ready || {}; g.rolls = g.rolls || {}; g.fleets = g.fleets || {};
+  g.shots = g.shots || {}; g.shotTurn = g.shotTurn || {};
+  Object.keys(g.fleets).forEach(u => g.fleets[u] = arr(g.fleets[u]));
+  return g;
+}
+const cur = g => g.order[g.turn];
+const nm = (g, u) => g.names[u];
+const allies = (g, a, b) => a === b || (g.mode === "duo" && g.team[a] === g.team[b]);
+const isOut = (g, u) => g.out.includes(u);
+const opponents = (g, u) => g.order.filter(x => !allies(g, u, x) && !isOut(g, x));
+const pending = (g, u) => opponents(g, u).filter(x => !g.shotTurn[x]);
+const hitAt = (g, u, r, c) => (g.shots[u] || {})[r + "_" + c];
+function sunkIdx(g, u) { const f = g.fleets[u] || []; return f.map((s, i) => shipCells(s).every(([r, c]) => hitAt(g, u, r, c) === "h") ? i : -1).filter(i => i >= 0); }
+const shipsLeft = (g, u) => (g.fleets[u] || []).length - sunkIdx(g, u).length;
+function logp(g, s) { g.log.push(s); if (g.log.length > 50) g.log = g.log.slice(-50); }
+function nextTurn(g) {
+  g.shotTurn = {};
+  let i = g.turn, guard = 0;
+  do { i = (i + 1) % g.order.length; guard++; } while (isOut(g, g.order[i]) && guard < 10);
+  g.turn = i; g.turnNo = (g.turnNo || 0) + 1; g.deadline = now() + TURN_MS;
+}
+function checkEnd(g) {
+  if (g.mode === "duo") {
+    [0, 1].forEach(t => { if (!g.ended && g.order.filter(u => g.team[u] === t).every(u => isOut(g, u))) { g.ended = true; g.winTeam = 1 - t; } });
+  } else {
+    const alive = g.order.filter(u => !isOut(g, u));
+    if (alive.length <= 1) { g.ended = true; g.places = [...alive, ...g.out.slice().reverse()]; }
+  }
+  if (g.ended) {
+    g.phase = "end"; g.rankPending = true; g.endTs = now();
+    logp(g, g.mode === "duo" ? `🏆 Dupla ${g.winTeam ? "B" : "A"} venceu!` : `🏆 ${nm(g, g.places[0])} venceu!`);
+  }
+}
+function doShot(g, u, t, r, c) {
+  g.shots[t] = g.shots[t] || {};
+  const idx = shipAt(g.fleets[t], r, c); const res = idx >= 0 ? "h" : "m";
+  g.shots[t][r + "_" + c] = res; g.shotTurn[t] = true;
+  let sunk = null, elim = false;
+  if (idx >= 0 && shipCells(g.fleets[t][idx]).every(([a, b]) => hitAt(g, t, a, b) === "h")) sunk = g.fleets[t][idx].name;
+  if (sunk && shipsLeft(g, t) === 0) { elim = true; g.out.push(t); }
+  g.lastShot = {by: u, to: t, r, c, res, sunk, elim, ts: now()};
+  logp(g, `${res === "h" ? "🔥" : "💦"} ${nm(g, u)} atirou em ${nm(g, t)} (${cellName(r, c)}): ${res === "h" ? "acertou!" : "água"}${sunk ? ` · afundou o ${sunk}!` : ""}`);
+  if (elim) logp(g, `☠️ ${nm(g, t)} perdeu toda a frota!`);
+  checkEnd(g); if (g.ended) return;
+  if (isOut(g, u)) { nextTurn(g); return; }
+  if (!pending(g, u).length) nextTurn(g);
+}
+function randomFreeCell(g, t) {
+  const N = g.size, free = [];
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (!hitAt(g, t, r, c)) free.push([r, c]);
+  return free[randInt(free.length)];
+}
+function finalizeOrder(g) {
+  const rk = (a, b) => (g.rolls[b].v - g.rolls[a].v) || (g.rolls[a].ts - g.rolls[b].ts);
+  const sorted = g.order.slice().sort(rk);
+  if (g.mode === "duo") { const A = sorted.filter(u => g.team[u] === g.team[sorted[0]]), B = sorted.filter(u => g.team[u] !== g.team[sorted[0]]); g.order = [A[0], B[0], A[1], B[1]]; }
+  else g.order = sorted;
+  g.turn = 0; g.turnNo = 1; g.shotTurn = {}; g.phase = "battle"; g.deadline = now() + TURN_MS;
+  g.orderAnn = {list: g.order.map(u => [u, g.rolls[u].v]), ts: now()};
+  logp(g, "🎲 Ordem pelo dado: " + g.order.map(u => `${nm(g, u)} (${g.rolls[u].v})`).join(" → "));
+}
+
+/* ================= AÇÕES ================= */
+async function act(fn) {
+  let err = null;
+  try {
+    await runTransaction(ref(db, `${ROOT}/rooms/${roomCode}/game`), g => {
+      if (!g) return g;
+      norm(g); err = null;
+      const fail = m => { err = m; return false; };
+      if (fn(g, fail) === false) return;
+      return g;
+    });
+  } catch (e) { err = "Erro de conexão: " + e.message; }
+  if (err) toast(err);
+  return !err;
+}
+function aReadyFleet(fleet) {
+  return act((g, fail) => {
+    if (g.phase !== "setup") return false;
+    if (!validFleet(fleet, g.size)) return fail("Frota inválida.");
+    g.fleets[uid] = fleet; g.ready[uid] = true;
+    if (g.order.every(u => g.ready[u])) { g.phase = "roll"; g.rollBy = now() + ROLL_MS; logp(g, "⚓ Todas as frotas posicionadas! Joguem o dado para definir a ordem."); }
+  });
+}
+function aRoll() {
+  return act((g, fail) => {
+    if (g.phase !== "roll") return false;
+    if (g.rolls[uid]) return fail("Você já jogou o dado.");
+    g.rolls[uid] = {v: fairRoll(), ts: now()};
+    if (g.order.every(u => g.rolls[u])) finalizeOrder(g);
+  });
+}
+function aShoot(t, r, c) {
+  return act((g, fail) => {
+    if (g.ended || g.phase !== "battle") return fail("A batalha não está acontecendo.");
+    if (cur(g) !== uid) return fail("Não é a sua vez.");
+    if (!pending(g, uid).includes(t)) return fail("Você já atirou nesse jogador neste turno.");
+    if (hitAt(g, t, r, c)) return fail("Você já atirou nessa casa.");
+    doShot(g, uid, t, r, c);
+  });
+}
+let lastTimeoutTry = 0;
+function checkTimeout() {
+  const g = R && R.game; if (!g || g.ended) return;
+  const limit = g.phase === "setup" ? g.setupBy : g.phase === "roll" ? g.rollBy : g.deadline;
+  if (!limit || now() < limit + 1500 || Date.now() - lastTimeoutTry < 3000) return;
+  lastTimeoutTry = Date.now();
+  const ph = g.phase, lim = limit;
+  act(g2 => {
+    if (g2.ended || g2.phase !== ph) return false;
+    if (ph === "setup") {
+      if (g2.setupBy !== lim || now() < g2.setupBy) return false;
+      g2.order.forEach(u => { if (!g2.ready[u]) { g2.fleets[u] = randomFleet(g2.size); g2.ready[u] = true; } });
+      logp(g2, "⏱ Tempo esgotado: frotas posicionadas automaticamente."); g2.phase = "roll"; g2.rollBy = now() + ROLL_MS;
+    } else if (ph === "roll") {
+      if (g2.rollBy !== lim || now() < g2.rollBy) return false;
+      g2.order.forEach(u => { if (!g2.rolls[u]) g2.rolls[u] = {v: fairRoll(), ts: now() + 1}; });
+      logp(g2, "⏱ Tempo esgotado: dado jogado automaticamente para quem faltou."); finalizeOrder(g2);
+    } else {
+      if (g2.deadline !== lim || now() < g2.deadline) return false;
+      const u = cur(g2); logp(g2, `⏱ Tempo esgotado: tiros automáticos para ${nm(g2, u)}`);
+      let guard = 0;
+      while (!g2.ended && cur(g2) === u && pending(g2, u).length && guard++ < 6) { const t = pending(g2, u)[0]; const [r, c] = randomFreeCell(g2, t); doShot(g2, u, t, r, c); }
+    }
+  });
+}
+
+/* ================= RANKING (separado) ================= */
+let rankClaimFor = null;
+async function claimAndSaveRanking(g) {
+  if (rankClaimFor === g.endTs) return; rankClaimFor = g.endTs;
+  let res;
+  try { res = await runTransaction(ref(db, `${ROOT}/rooms/${roomCode}/game/rankPending`), v => (v === true ? false : undefined)); }
+  catch (e) { rankClaimFor = null; return; }
+  if (!res || !res.committed) return;
+  for (const u of g.order) {
+    const rn = rankName(g.names[u]);
+    await runTransaction(ref(db, `${ROOT}/ranking/${rankKey(rn)}`), e => {
+      e = e || {n: rn, p1:0, p2:0, p3:0, p4:0, dw:0, dl:0, games:0};
+      e.n = rn; e.games = (e.games || 0) + 1;
+      if (g.mode === "duo") { if (g.team[u] === g.winTeam) e.dw = (e.dw || 0) + 1; else e.dl = (e.dl || 0) + 1; }
+      else { const k = "p" + (g.places.indexOf(u) + 1); e[k] = (e[k] || 0) + 1; }
+      return e;
+    });
+  }
+}
+async function openRanking() {
+  let rows = [];
+  try { const s = await get(ref(db, `${ROOT}/ranking`)); rows = Object.values(s.val() || {}); } catch (e) { return toast("Não foi possível abrir o ranking: confira as regras do Firebase."); }
+  FRIENDS.forEach(f => { if (!rows.some(r => r.n === f)) rows.push({n: f, p1:0, p2:0, p3:0, p4:0, dw:0, dl:0, games:0}); });
+  rows.sort((a, b) => (b.p1 - a.p1) || ((b.dw || 0) - (a.dw || 0)) || (b.p2 - a.p2) || (b.p3 - a.p3) || (a.n > b.n ? 1 : -1));
+  openModal(`<h3>🏆 Ranking da Batalha Naval</h3>
+    <div class="lbl">Nomes com erro de digitação ou parecidos contam para o amigo certo (ex.: "Lrissa" conta para Larissa).</div>
+    <table class="rk"><tr><th>Nome</th><th>🥇</th><th>🥈</th><th>🥉</th><th>4º</th><th>Duplas<br>V / D</th><th>Jogos</th></tr>
+    ${rows.map((r, i) => `<tr class="${i === 0 && (r.p1 || r.dw) ? "top1" : ""}"><td><b>${i + 1}.</b> ${esc(funName(r.n))}</td><td>${r.p1 || 0}</td><td>${r.p2 || 0}</td><td>${r.p3 || 0}</td><td>${r.p4 || 0}</td><td>${r.dw || 0} / ${r.dl || 0}</td><td>${r.games || 0}</td></tr>`).join("")}</table>
+    <button class="btn" id="rkClose">Fechar</button>`, "rank");
+  $("rkClose").onclick = closeModal;
+}
+
+/* ================= SALAS ================= */
+const savedName = () => ($("name").value.trim() || localStorage.getItem("nv_name") || "").slice(0, 14);
+function genCode() { const L = "ABCDEFGHJKLMNPQRSTUVWXYZ"; return Array.from({length: 4}, () => L[Math.floor(Math.random() * L.length)]).join(""); }
+async function createRoom() {
+  const raw = savedName(); if (!raw) return toast("Digite seu nome.");
+  if (isThomas(raw)) return toast(THOMAS_MSG, 4000);
+  localStorage.setItem("nv_name", raw); const name = funName(raw);
+  let code;
+  for (let i = 0; i < 6; i++) { code = genCode(); const s = await get(ref(db, `${ROOT}/rooms/${code}/meta`)); if (!s.exists()) break; }
+  await set(ref(db, `${ROOT}/rooms/${code}`), {meta: {host: uid, status: "lobby", mode: "solo", size: 8, created: now()}, players: {[uid]: {name, joined: now(), online: true, team: 0}}});
+  enterRoom(code);
+}
+async function joinRoom(code) {
+  code = (code || "").trim().toUpperCase();
+  if (code.length !== 4) return toast("O código tem 4 letras.");
+  const raw = savedName(); if (!raw) return toast("Digite seu nome.");
+  if (isThomas(raw)) return toast(THOMAS_MSG, 4000);
+  localStorage.setItem("nv_name", raw); const name = funName(raw);
+  const [ms, pss] = await Promise.all([get(ref(db, `${ROOT}/rooms/${code}/meta`)), get(ref(db, `${ROOT}/rooms/${code}/players`))]);
+  if (!ms.exists()) return toast("Sala não encontrada.");
+  const meta = ms.val(), players = pss.val() || {};
+  if (players[uid]) return enterRoom(code);
+  if (meta.status !== "lobby") return toast("Essa partida já começou.");
+  let ok = false, why = "";
+  await runTransaction(ref(db, `${ROOT}/rooms/${code}/players`), ps => {
+    ps = ps || {};
+    if (ps[uid]) { ok = true; return ps; }
+    const list = Object.values(ps);
+    if (list.length >= 4) { why = "Sala cheia (máximo 4)."; return; }
+    const cA = list.filter(p => p.team === 0).length, cB = list.length - cA;
+    ps[uid] = {name, joined: now(), online: true, team: cA <= cB ? 0 : 1}; ok = true; return ps;
+  });
+  if (!ok) return toast(why || "Não foi possível entrar.");
+  enterRoom(code);
+}
+function enterRoom(code) {
+  leaveListeners();
+  roomCode = code; localStorage.setItem("nv_room", code);
+  history.replaceState(null, "", location.pathname + "?sala=" + code);
+  const onRef = ref(db, `${ROOT}/rooms/${code}/players/${uid}/online`);
+  unsubConn = onValue(ref(db, ".info/connected"), s => { if (s.val() === true) onDisconnect(onRef).set(false).then(() => set(onRef, true)); });
+  firstSnap = true; R = {}; const got = {};
+  // a sala é lida em partes (meta, jogadores, jogo) para o chat de cada dupla poder ser privado
+  unsubRoom = ["meta", "players", "game"].map(k => onValue(ref(db, `${ROOT}/rooms/${code}/${k}`), s => {
+    if (!R) return;
+    R[k] = s.val(); got[k] = true;
+    if (k === "game" && R.game) norm(R.game);
+    if (!got.meta || !got.players || !got.game) return;
+    if (!R.meta || !R.players || !R.players[uid]) { toast("Você não está nesta sala."); leaveRoom(); return; }
+    syncChat(); render();
+  }));
+}
+function leaveListeners() { if (unsubRoom) unsubRoom.forEach(f => f()); if (unsubConn) unsubConn(); unsubRoom = unsubConn = null; stopChat(); }
+async function leaveRoom() {
+  const code = roomCode;
+  if (code && R && R.meta && R.meta.status === "lobby" && R.players && R.players[uid]) {
+    const others = Object.keys(R.players).filter(u => u !== uid);
+    if (!others.length) await set(ref(db, `${ROOT}/rooms/${code}`), null);
+    else { const upd = {[`players/${uid}`]: null}; if (R.meta.host === uid) upd["meta/host"] = others[0]; await update(ref(db, `${ROOT}/rooms/${code}`), upd); }
+  } else if (code) set(ref(db, `${ROOT}/rooms/${code}/players/${uid}/online`), false);
+  leaveListeners(); roomCode = null; R = null; localStorage.removeItem("nv_room");
+  history.replaceState(null, "", location.pathname);
+  closeModal(); show("home");
+}
+function buildGame(ps, mode, size) {
+  const uids = Object.keys(ps).sort((a, b) => ps[a].joined - ps[b].joined);
+  const g = {mode, size, order: uids.slice(), names: {}, col: {}, team: {}, ready: {}, rolls: {}, fleets: {}, shots: {}, shotTurn: {}, out: [], places: [], log: [], phase: "setup", turn: 0, turnNo: 0, ended: false};
+  if (mode === "duo") {
+    const A = uids.filter(u => ps[u].team === 0), B = uids.filter(u => ps[u].team === 1);
+    A.forEach((u, i) => { g.team[u] = 0; g.col[u] = i ? 4 : 0; }); B.forEach((u, i) => { g.team[u] = 1; g.col[u] = i ? 3 : 1; });
+  } else uids.forEach((u, i) => g.col[u] = [0, 1, 2, 3][i]);
+  uids.forEach(u => g.names[u] = ps[u].name);
+  g.setupBy = now() + SETUP_MS;
+  logp(g, `⚓ Partida ${size === 8 ? "rápida (8x8)" : "mais longa (10x10)"} começou! Posicionem a frota.`);
+  if (mode === "duo") logp(g, `👥 Dupla A: ${uids.filter(u => g.team[u] === 0).map(u => g.names[u]).join(" e ")} · Dupla B: ${uids.filter(u => g.team[u] === 1).map(u => g.names[u]).join(" e ")}`);
+  return g;
+}
+let starting = false;
+async function startGame() {
+  const ps = R.players; const uids = Object.keys(ps); const duo = R.meta.mode === "duo";
+  if (uids.length < 2) return toast("Precisa de pelo menos 2 jogadores.");
+  if (duo && (uids.length !== 4 || uids.filter(u => ps[u].team === 0).length !== 2)) return toast("No modo dupla precisa de 4 jogadores, 2 em cada dupla.");
+  if (R.game || starting) return; starting = true; setTimeout(() => starting = false, 4000);
+  await update(ref(db, `${ROOT}/rooms/${roomCode}`), {"meta/status": "playing", game: buildGame(ps, duo ? "duo" : "solo", R.meta.size === 10 ? 10 : 8), chat: null});
+}
+
+/* ================= CHAT DA DUPLA ================= */
+let chatKey = null, chatUnsub = null, chatMsgs = [], chatSeen = 0, chatUnread = 0, chatFirst = true;
+const QUICK = ["Ataca o barco dele em…", "Acertei ele! 🔥", "Ele ainda tem navio grande", "Cuidado! ⚠️", "Boa, parceiro! 👏"];
+function stopChat() { if (chatUnsub) chatUnsub(); chatUnsub = null; chatKey = null; chatMsgs = []; chatUnread = 0; chatFirst = true; updChatBadge(); }
+function syncChat() {
+  const g = R && R.game;
+  const key = g && g.mode === "duo" && g.team[uid] !== undefined ? "t" + g.team[uid] : null;
+  if (key === chatKey) return;
+  stopChat(); if (!key) return;
+  chatKey = key;
+  chatUnsub = onValue(query(ref(db, `${ROOT}/rooms/${roomCode}/chat/${key}`), limitToLast(60)), s => {
+    const list = []; s.forEach(c => { list.push(c.val()); });
+    chatMsgs = list;
+    const fresh = list.filter(m => m.ts > chatSeen && m.u !== uid);
+    if (chatFirst) { chatFirst = false; chatSeen = Math.max(chatSeen, ...list.map(m => m.ts), 0); }
+    else if (fresh.length) {
+      chatSeen = Math.max(...list.map(m => m.ts));
+      if (modalKind !== "chat") { chatUnread += fresh.length; const m = fresh[fresh.length - 1]; toast(`💬 ${m.n}: ${m.m}`, 3500); try { navigator.vibrate && navigator.vibrate(60); } catch (e) {} }
+    }
+    updChatBadge(); if (modalKind === "chat") drawChat();
+  }, () => { if (chatUnsub) chatUnsub(); chatUnsub = null; });
+}
+function updChatBadge() { const n = $("nChat"); if (n) n.innerHTML = chatUnread ? `<span class="badge">${chatUnread > 9 ? "9+" : chatUnread}</span>` : ""; }
+function drawChat() {
+  const box = $("chatList"); if (!box) return;
+  box.innerHTML = chatMsgs.length ? chatMsgs.map(m => `<div class="msg ${m.u === uid ? "me" : ""}"><small>${esc(m.n)}</small>${esc(m.m)}</div>`).join("") : '<div class="lbl" style="text-align:center;margin:auto">Só você e seu parceiro veem este chat.</div>';
+  box.scrollTop = box.scrollHeight;
+}
+async function sendChat(text) {
+  text = (text || "").trim().slice(0, 200); if (!text || !chatKey) return;
+  if (isThomas(text)) return toast("🎖️ A palavra Thomas está reservada para um futuro general!", 3500);
+  try { await push(ref(db, `${ROOT}/rooms/${roomCode}/chat/${chatKey}`), {u: uid, n: R.game.names[uid], m: text, ts: now()}); }
+  catch (e) { toast("Não foi possível enviar: confira as regras do Firebase."); }
+}
+function openChat() {
+  const g = R.game; const partner = g.order.find(x => x !== uid && g.team[x] === g.team[uid]);
+  chatUnread = 0; updChatBadge();
+  openModal(`<h3>💬 Chat da Dupla ${g.team[uid] ? "B" : "A"}</h3>
+    <div class="lbl">Só você e <b style="color:${PCOL[g.col[partner]].f}">${esc(nm(g, partner))}</b> veem estas mensagens.</div>
+    <div class="msgs" id="chatList"></div>
+    <div class="quick">${QUICK.map((q, i) => `<button data-q="${i}">${q}</button>`).join("")}</div>
+    <div class="row"><input class="inp" id="chatIn" maxlength="200" placeholder="Mensagem para o parceiro…" style="flex:1"><button class="btn pri" id="chatSend" style="flex:none;width:84px">Enviar</button></div>
+    <button class="btn" id="chatClose">Fechar</button>`, "chat");
+  drawChat();
+  const send = () => { const i = $("chatIn"); sendChat(i.value); i.value = ""; i.focus(); };
+  $("chatSend").onclick = send;
+  $("chatIn").addEventListener("keydown", e => { if (e.key === "Enter") send(); });
+  document.querySelectorAll(".quick button").forEach(b => b.onclick = () => { const q = QUICK[+b.dataset.q]; if (q.endsWith("…")) { $("chatIn").value = q.replace("…", " "); $("chatIn").focus(); } else sendChat(q); });
+  $("chatClose").onclick = closeModal;
+}
+
+/* ================= DADO 3D (igual ao do War e do Ludo) ================= */
+const PIPS = {1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+const FACE_ROT = {1:[0,0], 6:[0,180], 3:[0,-90], 4:[0,90], 5:[-90,0], 2:[90,0]};
+const faceHTML = n => `<div class="face f${n}">${Array.from({length: 9}, (_, i) => `<i class="${PIPS[n].includes(i) ? "v" : ""}"></i>`).join("")}</div>`;
+function throwDie(v) {
+  const L = $("diceLayer"); L.innerHTML = "";
+  const w = document.createElement("div"); w.className = "dw";
+  w.innerHTML = `<div class="dshadow"></div><div class="cube">${[1,2,3,4,5,6].map(faceHTML).join("")}</div><div class="dnum">${v}</div>`;
+  L.appendChild(w);
+  const cube = w.querySelector(".cube");
+  const x = innerWidth / 2 - 27, y = innerHeight * .32;
+  const x0 = -70, y0 = innerHeight * .8, mx = (x0 + x) / 2, my = y - 150;
+  const [rx, ry] = FACE_ROT[v];
+  const sx = rx + 360 * (2 + Math.floor(Math.random() * 2)), sy = ry + 360 * (2 + Math.floor(Math.random() * 2)), rz0 = Math.random() * 300 + 200;
+  const T = 1150;
+  const path = w.animate([
+    {transform: `translate(${x0}px,${y0}px) scale(.7)`}, {transform: `translate(${mx}px,${my}px) scale(1.3)`, offset: .42},
+    {transform: `translate(${x}px,${y}px) scale(1)`, offset: .7}, {transform: `translate(${x + 8}px,${y - 22}px) scale(1.06)`, offset: .83},
+    {transform: `translate(${x}px,${y}px) scale(1)`}
+  ], {duration: T, easing: "cubic-bezier(.25,.6,.35,1)", fill: "forwards"});
+  cube.animate([{transform: `rotateX(${sx}deg) rotateY(${sy}deg) rotateZ(${rz0}deg)`}, {transform: `rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(0deg)`}], {duration: T, easing: "cubic-bezier(.15,.6,.25,1)", fill: "forwards"});
+  return path.finished.then(() => {
+    const z = w.animate([{transform: `translate(${x}px,${y}px) scale(1)`}, {transform: `translate(${x}px,${y}px) scale(1.9)`, offset: .35}, {transform: `translate(${x}px,${y}px) scale(1.5)`}], {duration: 650, easing: "ease-out", fill: "forwards"});
+    w.querySelector(".dnum").classList.add("on");
+    try { navigator.vibrate && navigator.vibrate(25); } catch (e) {}
+    return z.finished.then(() => setTimeout(() => w.remove(), 1600));
+  });
+}
+
+/* ================= MODAIS E TELAS ================= */
+let modalKind = null;
+function openModal(html, kind) { $("sheet").innerHTML = html; $("modal").classList.add("on"); modalKind = kind || "x"; }
+function closeModal() { $("modal").classList.remove("on"); modalKind = null; }
+$("modal").addEventListener("click", e => { if (e.target.id === "modal" && modalKind !== "roll") closeModal(); });
+const bigQ = []; let bigOn = false, bigT = null;
+function showBig(html, ms) { bigQ.push({html, ms}); if (!bigOn) nextBig(); }
+function nextBig() {
+  const it = bigQ.shift();
+  if (!it) { bigOn = false; $("bigPop").classList.remove("on"); return; }
+  bigOn = true; $("bigBox").innerHTML = it.html; $("bigPop").classList.add("on");
+  const b = $("bigOk"); if (b) b.onclick = closeBig;
+  bindBigExtras();
+  clearTimeout(bigT); if (it.ms) bigT = setTimeout(closeBig, it.ms);
+}
+function closeBig() { clearTimeout(bigT); $("bigPop").classList.remove("on"); setTimeout(nextBig, 180); }
+$("bigPop").addEventListener("click", e => { if (e.target.id === "bigPop") closeBig(); });
+function bindBigExtras() {
+  if ($("bigRank")) $("bigRank").onclick = () => { closeBig(); openRanking(); };
+  if ($("bigNew")) $("bigNew").onclick = async () => { closeBig(); await update(ref(db, `${ROOT}/rooms/${roomCode}`), {"meta/status": "lobby", game: null, chat: null}); };
+}
+let shotBarT = null;
+function shotBar(html, ms = 2600) { const b = $("shotBar"); b.innerHTML = html; b.classList.add("on"); clearTimeout(shotBarT); shotBarT = setTimeout(() => b.classList.remove("on"), ms); }
+function openMenu() {
+  openModal(`<h3>Menu</h3><div class="lbl">Sala ${roomCode}. Se sair, dá pra voltar depois com o mesmo código.</div>
+    <button class="btn" id="mShare">Copiar convite da sala</button>
+    <button class="btn" id="mRank">🏆 Ranking da Batalha Naval</button>
+    <button class="btn" id="mLog">📜 Registro da partida</button>
+    <button class="btn" id="mHelp">Regras</button>
+    <button class="btn red" id="mLeave">Sair da partida</button>
+    <button class="btn" id="mClose">Fechar</button>`, "menu");
+  $("mShare").onclick = share; $("mRank").onclick = openRanking; $("mLeave").onclick = leaveRoom; $("mClose").onclick = closeModal;
+  $("mLog").onclick = () => { const g = R.game; openModal(`<h3>📜 Registro</h3><div class="list">${(g ? g.log : []).slice().reverse().map(l => `<div class="it" style="font-size:14px">${esc(l)}</div>`).join("")}</div><button class="btn" id="lgClose">Fechar</button>`, "log"); $("lgClose").onclick = closeModal; };
+  $("mHelp").onclick = () => { openModal(`<h3>Regras</h3><div class="list" style="font-size:14px;line-height:1.45">
+    <div class="it">⚓ Cada um posiciona a frota no seu mar (pode tocar num navio para mover, girar ou usar "Aleatório").</div>
+    <div class="it">🎲 Todos jogam o dado (chance igual de 1 a 6): quem tirar mais começa. Empate: quem jogou primeiro.</div>
+    <div class="it">🎯 Na sua vez, você dá 1 tiro em CADA adversário que ainda tem navio. Ninguém fica sendo atacado só por um.</div>
+    <div class="it">🔥 Acerto · 💦 Água · 💥 Navio afundado (todos veem quando um navio afunda).</div>
+    <div class="it">☠️ Quem perde toda a frota sai do jogo. O último com navio vence.</div>
+    <div class="it">👥 Duplas: você vê o mar do parceiro, tem chat privado e atira 1 vez em cada adversário da outra dupla.</div>
+    <div class="it">⏱ Cada turno tem 1 minuto; se acabar, os tiros que faltam saem automáticos.</div></div>
+    <button class="btn" id="hClose">Fechar</button>`, "help"); $("hClose").onclick = closeModal; };
+}
+async function share() {
+  const link = location.origin + location.pathname + "?sala=" + roomCode;
+  const txt = `Bora jogar Batalha Naval! Sala ${roomCode}: ${link}`;
+  try { if (navigator.share) { await navigator.share({title: "Batalha Naval", text: txt}); return; } } catch (e) {}
+  try { await navigator.clipboard.writeText(txt); toast("Convite copiado!"); } catch (e) { toast(link, 5000); }
+}
+
+/* ================= GRADE ================= */
+function drawGrid(N, cellFn, onClick) {
+  const el = $("grid");
+  el.style.gridTemplateColumns = `repeat(${N + 1}, 1fr)`; el.style.gridTemplateRows = `repeat(${N + 1}, 1fr)`;
+  let h = `<div></div>`; for (let c = 0; c < N; c++) h += `<div class="lb">${LETTERS[c]}</div>`;
+  for (let r = 0; r < N; r++) { h += `<div class="lb">${r + 1}</div>`; for (let c = 0; c < N; c++) { const o = cellFn(r, c); h += `<div class="cl ${o.cls || ""}" data-r="${r}" data-c="${c}">${o.html || ""}</div>`; } }
+  el.innerHTML = h;
+  el.onclick = e => { const t = e.target.closest(".cl"); if (!t || !onClick) return; onClick(+t.dataset.r, +t.dataset.c); };
+}
+function shipShape(s, r, c) { const k = s.d === "h" ? c - s.c : r - s.r; return k === 0 ? `r-${s.d}0` : (k === s.len - 1 ? `r-${s.d}1` : ""); }
+function boardCells(g, u, showShips) {
+  const fleet = g.fleets[u] || [], sunk = new Set(sunkIdx(g, u));
+  return (r, c) => {
+    const i = shipAt(fleet, r, c), h = hitAt(g, u, r, c); const cls = [];
+    if (i >= 0 && (showShips || sunk.has(i))) { cls.push("ship", shipShape(fleet[i], r, c)); if (sunk.has(i)) cls.push("sunk"); }
+    if (h === "h") cls.push("hit"); else if (h === "m") cls.push("miss");
+    return {cls: cls.join(" ")};
+  };
+}
+
+/* ================= POSICIONAR FROTA ================= */
+let draft = null, draftSize = null, selShip = -1;
+function renderSetup(g) {
+  if (!draft || draftSize !== g.size) { draft = randomFleet(g.size); draftSize = g.size; selShip = -1; }
+  const ready = !!g.ready[uid];
+  const fleet = ready ? g.fleets[uid] : draft;
+  $("tabs").innerHTML = ""; $("bTitle").textContent = ready ? "Sua frota está pronta ✔" : "Posicione sua frota";
+  drawGrid(g.size, (r, c) => { const i = shipAt(fleet, r, c); return i >= 0 ? {cls: `ship ${shipShape(fleet[i], r, c)} ${i === selShip ? "selS" : ""}`} : {}; }, ready ? null : (r, c) => {
+    const i = shipAt(draft, r, c);
+    if (i >= 0) { selShip = i === selShip ? -1 : i; return renderGame(); }
+    if (selShip < 0) return toast("Toque num navio para escolher, depois toque onde quer colocar.");
+    const s = {...draft[selShip], r, c};
+    if (!fits(draft, selShip, s, g.size)) { const s2 = {...s, d: s.d === "h" ? "v" : "h"}; if (fits(draft, selShip, s2, g.size)) { draft[selShip] = s2; return renderGame(); } return toast("Não cabe aí."); }
+    draft[selShip] = s; renderGame();
+  });
+  const waiting = g.order.filter(u => !g.ready[u]).map(u => esc(nm(g, u)));
+  $("gBanner").innerHTML = ready ? `Aguardando: <b>${waiting.join(", ")}</b>` : (selShip >= 0 ? `<b>${draft[selShip].name}</b> (${draft[selShip].len} casas) selecionado: toque onde colocar ou gire.` : "Toque num navio para mover. Quando estiver bom, toque em <b>Pronto</b>.");
+  $("acts").innerHTML = ready ? "" : `<button class="btn" id="aRand">🔀 Aleatório</button><button class="btn" id="aRot" ${selShip < 0 ? "disabled" : ""}>↻ Girar</button><button class="btn pri" id="aReady">Pronto ✔</button>`;
+  if (!ready) {
+    $("aRand").onclick = () => { draft = randomFleet(g.size); selShip = -1; renderGame(); };
+    $("aRot").onclick = () => { if (selShip < 0) return; const s = draft[selShip], s2 = {...s, d: s.d === "h" ? "v" : "h"}; if (fits(draft, selShip, s2, g.size)) { draft[selShip] = s2; renderGame(); } else toast("Não dá pra girar aí: mova o navio primeiro."); };
+    $("aReady").onclick = () => { $("aReady").disabled = true; selShip = -1; aReadyFleet(draft); };
+  }
+}
+
+/* ================= DADO DA ORDEM ================= */
+function renderRoll(g) {
+  const mine = g.rolls[uid];
+  $("tabs").innerHTML = ""; $("bTitle").textContent = "Sua frota";
+  drawGrid(g.size, boardCells(g, uid, true), null);
+  const list = g.order.map(u => `${esc(nm(g, u))}: ${g.rolls[u] ? "🎲 <b>" + g.rolls[u].v + "</b>" : "…"}`).join(" · ");
+  $("gBanner").innerHTML = `Quem tirar mais no dado começa.<br><span style="font-size:14px">${list}</span>`;
+  $("acts").innerHTML = `<button class="bigbtn" id="aRoll" ${mine ? "disabled" : ""}>${mine ? "Aguardando os outros…" : "🎲 Jogar o dado"}</button>`;
+  if (!mine) $("aRoll").onclick = async () => { $("aRoll").disabled = true; await aRoll(); };
+}
+
+/* ================= BATALHA ================= */
+let view = null, viewLock = 0;
+function renderBattle(g) {
+  const mine = !g.ended && cur(g) === uid, pend = mine ? pending(g, uid) : [];
+  if (!view || !g.order.includes(view)) view = uid;
+  if (mine && Date.now() > viewLock && !pend.includes(view) && pend.length) view = pend[0];
+  // abas: o meu mar, o do parceiro e o de cada adversário
+  $("tabs").innerHTML = g.order.map(u => {
+    const tag = u === uid ? "Meu mar" : esc(nm(g, u));
+    const st = isOut(g, u) ? " ☠️" : (mine && !allies(g, uid, u) ? (g.shotTurn[u] ? " ✔" : " 🎯") : "");
+    return `<button class="tab ${u === view ? "sel" : ""} ${mine && g.shotTurn[u] ? "done" : ""}" data-u="${u}"><i class="dot" style="background:${PCOL[g.col[u]].f}"></i>${tag}${st}</button>`;
+  }).join("");
+  document.querySelectorAll(".tab").forEach(b => b.onclick = () => { view = b.dataset.u; viewLock = Date.now() + 4000; renderGame(); });
+  const own = allies(g, uid, view);
+  $("bTitle").textContent = view === uid ? "Meu mar" : (own ? `Mar do parceiro: ${nm(g, view)}` : `Mar de ${nm(g, view)} · ${shipsLeft(g, view)} navio${shipsLeft(g, view) === 1 ? "" : "s"}`);
+  const canShoot = mine && pend.includes(view);
+  drawGrid(g.size, (r, c) => { const o = boardCells(g, view, own)(r, c); if (canShoot && !hitAt(g, view, r, c)) o.cls += " click"; return o; }, canShoot ? (r, c) => {
+    if (hitAt(g, view, r, c)) return toast("Já atiraram aí.");
+    if (shotBusy) return;
+    shotBusy = true; setTimeout(() => shotBusy = false, 900);
+    viewLock = Date.now() + 1400; aShoot(view, r, c);
+  } : null);
+  if (g.ended) $("gBanner").innerHTML = g.mode === "duo" ? `🏆 <b>Dupla ${g.winTeam ? "B" : "A"}</b> venceu!` : `🏆 <b>${esc(nm(g, g.places[0]))}</b> venceu!`;
+  else if (isOut(g, uid)) $("gBanner").innerHTML = `☠️ Sua frota foi afundada. Assistindo… Vez de <b>${esc(nm(g, cur(g)))}</b>.`;
+  else if (mine) $("gBanner").innerHTML = pend.length ? `<b>Sua vez!</b> Dê 1 tiro em cada adversário. Falta${pend.length > 1 ? "m" : ""}: <b>${pend.map(u => esc(nm(g, u))).join(", ")}</b>` : "Tiros dados!";
+  else $("gBanner").innerHTML = `Vez de <b style="color:${PCOL[g.col[cur(g)]].f}">${esc(nm(g, cur(g)))}</b> atirar`;
+  $("acts").innerHTML = "";
+}
+let shotBusy = false;
+function animateShot(s, g) {
+  const cell = document.querySelector(`#grid .cl[data-r="${s.r}"][data-c="${s.c}"]`);
+  if (cell) {
+    const b = document.createElement("div"); b.className = "boom"; b.textContent = "💣"; cell.appendChild(b);
+    b.animate([{transform: "translateY(-160%) scale(.6)", opacity: 0}, {transform: "translateY(0) scale(1)", opacity: 1}], {duration: 380, easing: "ease-in"}).finished.then(() => {
+      b.textContent = s.res === "h" ? "💥" : "💦";
+      return b.animate([{transform: "scale(.6)", opacity: 1}, {transform: "scale(1.6)", opacity: 1, offset: .5}, {transform: "scale(1.9)", opacity: 0}], {duration: 650, easing: "ease-out"}).finished;
+    }).then(() => b.remove()).catch(() => b.remove());
+  }
+  const who = esc(nm(g, s.by)), tgt = s.to === uid ? "você" : esc(nm(g, s.to));
+  shotBar(`${s.res === "h" ? "🔥" : "💦"} ${who} atirou em ${tgt} (${cellName(s.r, s.c)}): <b>${s.res === "h" ? "FOGO!" : "ÁGUA"}</b>`);
+  if (s.to === uid && s.res === "h") { try { navigator.vibrate && navigator.vibrate([120, 60, 120]); } catch (e) {} }
+  if (s.sunk) setTimeout(() => showBig(`<div style="font-size:56px">💥</div><div class="bp-title" style="font-size:36px">AFUNDOU!</div>
+    <div class="bp-sub">${who} afundou o <b>${esc(s.sunk)}</b> de ${tgt}!</div>${s.elim ? `<div class="bp-sub" style="color:#c62828">☠️ ${s.to === uid ? "Sua frota" : "A frota de " + esc(nm(g, s.to))} foi toda afundada!</div>` : ""}
+    <button class="btn pri" id="bigOk">OK</button>`, 3200), 900);
+}
+
+/* ================= RENDER ================= */
+let firstSnap = true, lastShotTs = null, lastTurnNo = null, lastOrderTs = null, endShown = null, myRollShown = false;
+function render() {
+  if (!R || !R.meta) return show("home");
+  if (R.meta.status === "lobby") { endShown = null; myRollShown = false; draft = null; return renderLobby(); }
+  show("game"); renderGame();
+}
+function renderLobby() {
+  show("lobby");
+  $("lCode").textContent = roomCode;
+  const ps = Object.entries(R.players).sort((a, b) => a[1].joined - b[1].joined);
+  const host = R.meta.host === uid, duo = R.meta.mode === "duo", size = R.meta.size === 10 ? 10 : 8;
+  $("lCount").textContent = ps.length;
+  document.querySelectorAll("#lMode button").forEach(b => { const on = (b.dataset.m === "duo") === duo; b.classList.toggle("pri", on); b.disabled = !host && !on; b.onclick = () => host && update(ref(db, `${ROOT}/rooms/${roomCode}/meta`), {mode: b.dataset.m}); });
+  document.querySelectorAll("#lSize button").forEach(b => { const on = +b.dataset.s === size; b.classList.toggle("pri", on); b.disabled = !host && !on; b.onclick = () => host && update(ref(db, `${ROOT}/rooms/${roomCode}/meta`), {size: +b.dataset.s}); });
+  $("lPlayers").innerHTML = ps.map(([u, p]) => `<div class="pitem"><div>${esc(p.name)}${u === R.meta.host ? " 👑" : ""}${u === uid ? ' <span class="lbl">(você)</span>' : ""}</div>
+    ${duo ? `<div style="display:flex;gap:6px;margin-left:auto">${[0, 1].map(t => `<button class="tbtn ${p.team === t ? "sel" : ""}" data-u="${u}" data-t="${t}" ${u === uid || host ? "" : "disabled"}>Dupla ${t ? "B" : "A"}</button>`).join("")}</div>` : ""}
+    <i class="on-dot ${p.online ? "" : "off"}" ${duo ? 'style="margin-left:6px"' : ""}></i></div>`).join("");
+  document.querySelectorAll(".tbtn").forEach(b => b.onclick = () => {
+    const u = b.dataset.u, t = +b.dataset.t;
+    if (Object.entries(R.players).filter(([x, p]) => x !== u && p.team === t).length >= 2) return toast(`A Dupla ${t ? "B" : "A"} já tem 2 jogadores.`);
+    update(ref(db, `${ROOT}/rooms/${roomCode}/players/${u}`), {team: t});
+  });
+  $("bShuffle").style.display = duo && host ? "" : "none";
+  const cA = ps.filter(([, p]) => p.team === 0).length;
+  $("bStart").style.display = host ? "" : "none";
+  $("bStart").disabled = duo ? !(ps.length === 4 && cA === 2) : ps.length < 2;
+  $("lWait").textContent = duo
+    ? (ps.length !== 4 ? `Dupla x Dupla precisa de 4 jogadores (faltam ${4 - ps.length}).` : (cA !== 2 ? "Cada dupla precisa ter 2 jogadores: escolham Dupla A ou B." : (host ? "Duplas prontas!" : "Aguardando o criador da sala começar…")))
+    : (host ? (ps.length < 2 ? "Mande o código para seus amigos." : "Todos prontos? Comece quando quiser.") : "Aguardando o criador da sala começar…");
+}
+function renderGame() {
+  const g = R.game; if (!g) return;
+  $("gTitle").innerHTML = `Sala ${roomCode} <small>· ${g.size}x${g.size}${g.mode === "duo" ? " · Duplas" : ""}</small>`;
+  $("bChat").style.display = g.mode === "duo" && g.team[uid] !== undefined ? "" : "none";
+  const med = ["🥇", "🥈", "🥉", "4º"];
+  $("gChips").innerHTML = g.order.map(u => {
+    const on = R.players[u] && R.players[u].online, pl = g.ended && g.mode !== "duo" ? med[g.places.indexOf(u)] + " " : "";
+    return `<div class="chip ${g.phase === "battle" && u === cur(g) && !g.ended ? "cur" : ""} ${isOut(g, u) ? "out" : ""}"><i class="dot" style="background:${PCOL[g.col[u]].f}"></i>${pl}${g.mode === "duo" ? `<b>${g.team[u] ? "B" : "A"}</b> ` : ""}${esc(nm(g, u))}${u === uid ? " (você)" : ""}${g.phase === "battle" || g.ended ? ` · 🚢${shipsLeft(g, u)}` : (g.phase === "setup" ? (g.ready[u] ? " ✔" : " …") : "")}${on ? "" : " 📴"}</div>`;
+  }).join("");
+  if (g.phase === "setup") renderSetup(g);
+  else if (g.phase === "roll") renderRoll(g);
+  else renderBattle(g);
+  // dado da ordem (o meu, animado)
+  if (g.rolls[uid] && !myRollShown && !firstSnap) { myRollShown = true; throwDie(g.rolls[uid].v); }
+  if (g.rolls[uid] && firstSnap) myRollShown = true;
+  if (g.orderAnn && g.orderAnn.ts !== lastOrderTs) {
+    if (!firstSnap) { const L = g.orderAnn.list; setTimeout(() => showBig(`<div style="font-size:46px">🎲</div><div class="bp-title" style="font-size:34px">ORDEM DEFINIDA</div>
+      <div class="list" style="text-align:left">${L.map(([u, v], i) => `<div class="it"><b style="width:28px">${i + 1}º</b><i class="dot" style="background:${PCOL[g.col[u]].f}"></i>${esc(nm(g, u))}${u === uid ? " (você)" : ""}<span class="r">🎲 <b>${v}</b></span></div>`).join("")}</div>
+      <div class="bp-small">Na sua vez, 1 tiro em cada adversário!</div><button class="btn pri" id="bigOk">Começar!</button>`, 5000), 1800); }
+    lastOrderTs = g.orderAnn.ts;
+  }
+  // tiros
+  if (g.lastShot && g.lastShot.ts !== lastShotTs) {
+    const s = g.lastShot; lastShotTs = s.ts;
+    if (!firstSnap) {
+      if (cur(g) !== uid || s.by !== uid) { if (Date.now() > viewLock || s.to === uid) { view = s.to; renderGame(); } }
+      requestAnimationFrame(() => animateShot(s, g));
+      if (s.by === uid && !g.ended && cur(g) === uid) { viewLock = Date.now() + 1300; setTimeout(() => renderGame(), 1350); }
+    }
+  }
+  // sua vez
+  if (g.phase === "battle" && !g.ended && cur(g) === uid && g.turnNo !== lastTurnNo) {
+    const names = pending(g, uid).map(u => esc(nm(g, u))).join(" · ");
+    setTimeout(() => showBig(`<div class="bp-title">SUA VEZ</div><div class="bp-sub">Dê 1 tiro em cada adversário</div><div class="bp-small">${names}</div>`, 1700), lastTurnNo === null ? 300 : 1500);
+    try { navigator.vibrate && navigator.vibrate([150, 80, 150]); } catch (e) {}
+  }
+  lastTurnNo = g.turnNo;
+  // fim
+  if (g.ended && endShown !== g.endTs) {
+    endShown = g.endTs;
+    const body = g.mode === "duo"
+      ? `<div class="bp-sub">Dupla ${g.winTeam ? "B" : "A"} venceu!</div><div class="list" style="text-align:left">${g.order.filter(u => g.team[u] === g.winTeam).map(u => `<div class="it">🥇 ${esc(nm(g, u))}</div>`).join("")}${g.order.filter(u => g.team[u] !== g.winTeam).map(u => `<div class="it">🥈 ${esc(nm(g, u))}</div>`).join("")}</div>`
+      : `<div class="list" style="text-align:left">${g.places.map((u, i) => `<div class="it"><b style="width:28px">${med[i]}</b><i class="dot" style="background:${PCOL[g.col[u]].f}"></i>${esc(nm(g, u))}${u === uid ? " (você)" : ""}</div>`).join("")}</div>`;
+    setTimeout(() => showBig(`<div style="font-size:54px">🏆</div><div class="bp-title" style="font-size:38px">FIM DE JOGO</div>${body}
+      <div class="bp-small">O resultado já foi somado no ranking da Batalha Naval.</div>
+      <button class="btn" id="bigRank">🏆 Ver ranking</button>
+      ${R.meta.host === uid ? `<button class="btn pri" id="bigNew">Nova partida</button>` : `<div class="bp-small">O criador da sala pode começar uma nova partida.</div>`}
+      <button class="btn" id="bigOk">Fechar</button>`), firstSnap ? 0 : 3500);
+  }
+  if (g.ended && g.rankPending) claimAndSaveRanking(g);
+  firstSnap = false;
+}
+setInterval(() => {
+  const g = R && R.game; if (!g || !R.meta || R.meta.status !== "playing") return;
+  if (g.ended) { $("gTimer").textContent = "fim"; $("gTimer").classList.remove("low"); return; }
+  const lim = g.phase === "setup" ? g.setupBy : g.phase === "roll" ? g.rollBy : g.deadline;
+  const s = Math.max(0, Math.ceil((lim - now()) / 1000));
+  $("gTimer").textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  $("gTimer").classList.toggle("low", s <= 10);
+  checkTimeout();
+}, 250);
+
+/* ================= BOTÕES ================= */
+$("bCreate").onclick = () => uid ? createRoom() : toast("Ainda conectando…");
+$("bJoin").onclick = () => uid ? joinRoom($("codeIn").value) : toast("Ainda conectando…");
+$("codeIn").addEventListener("keydown", e => { if (e.key === "Enter") $("bJoin").click(); });
+$("bRank").onclick = () => uid ? openRanking() : toast("Ainda conectando…");
+$("bShare").onclick = share;
+$("bStart").onclick = startGame;
+$("bLeaveLobby").onclick = leaveRoom;
+$("bMenu").onclick = openMenu;
+$("bChat").onclick = () => R && R.game && R.game.mode === "duo" && openChat();
+$("bShuffle").onclick = async () => {
+  const us = shuffle(Object.keys(R.players)); const upd = {};
+  us.forEach((u, i) => upd[`players/${u}/team`] = i < 2 ? 0 : 1);
+  await update(ref(db, `${ROOT}/rooms/${roomCode}`), upd); toast("Duplas sorteadas!");
+};
+
+/* ================= INÍCIO ================= */
+$("name").value = localStorage.getItem("nv_name") || "";
+const urlCode = new URLSearchParams(location.search).get("sala");
+if (urlCode) $("codeIn").value = urlCode.toUpperCase();
+onAuthStateChanged(auth, async user => {
+  if (!user) { signInAnonymously(auth).catch(e => $("authMsg").textContent = "Erro ao conectar: " + e.message); return; }
+  uid = user.uid; $("authMsg").textContent = "Conectado ✔";
+  const saved = localStorage.getItem("nv_room");
+  const target = (urlCode || saved || "").toUpperCase();
+  if (target) {
+    try {
+      const s = await get(ref(db, `${ROOT}/rooms/${target}/players/${uid}`));
+      if (s.exists()) { enterRoom(target); return; }
+      if (saved === target) localStorage.removeItem("nv_room");
+    } catch (e) { $("authMsg").textContent = "Erro ao acessar o banco: " + e.message + " (confira as regras do Firebase)"; }
+  }
+});
+</script>
+</body>
+</html>
