@@ -429,7 +429,7 @@ async function openRanking() {
   FRIENDS.forEach(f => { if (!rows.some(r => r.n === f)) rows.push({n: f, p1:0, p2:0, p3:0, p4:0, dw:0, dl:0, games:0}); });
   rows.sort((a, b) => (b.p1 - a.p1) || ((b.dw || 0) - (a.dw || 0)) || (b.p2 - a.p2) || (b.p3 - a.p3) || (a.n > b.n ? 1 : -1));
   openModal(`<h3>🏆 Ranking geral</h3>
-    <div class="lbl">Todas as partidas de todo mundo. Nomes com erro de digitação ou parecidos contam para o amigo certo (ex.: "Lrissa" conta para Larissa).</div>
+    <div class="lbl">Todas as partidas de todo mundo. Nomes com erro de digitação ou parecidos contam para a pessoa certa, mesmo que seja o pato do <br>MIGUEL</BR>.</div>
     <table class="rk"><tr><th>Nome</th><th>🥇</th><th>🥈</th><th>🥉</th><th>4º</th><th>Duplas<br>V / D</th><th>Jogos</th></tr>
     ${rows.map((r, i) => `<tr class="${i === 0 && (r.p1 || r.dw) ? "top1" : ""}"><td><b>${i + 1}.</b> ${esc(funName(r.n))}</td><td>${r.p1 || 0}</td><td>${r.p2 || 0}</td><td>${r.p3 || 0}</td><td>${r.p4 || 0}</td><td>${r.dw || 0} / ${r.dl || 0}</td><td>${r.games || 0}</td></tr>`).join("")}</table>
     <button class="btn" id="rkClose">Fechar</button>`, "rank");
