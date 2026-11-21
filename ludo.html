@@ -99,6 +99,50 @@ table.rk tr.top1 td{background:#fff6cc}
 .bp-small{font-size:13px;color:var(--mut)}
 .bp .btn{font:20px "Lilita One",Fredoka,system-ui,sans-serif;letter-spacing:.5px;padding:13px}
 @keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
+
+/* ===== jogo: visual novo ===== */
+#game{background:radial-gradient(circle at 12px 12px,rgba(255,255,255,.07) 3.5px,transparent 4.5px) 0 0/26px 26px,linear-gradient(180deg,#2a4fb8,#1a3585 60%,#152c70);color:#fff;height:100dvh}
+#game .top{background:rgba(8,20,60,.55);border-bottom:0;color:#fff}
+#game .top .ttl small{color:#b9c8f0}
+#game .timer{background:rgba(255,255,255,.14);color:#fff}
+#game .timer.low{background:#ef5350}
+#game .ibtn{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.25);color:#fff}
+#stage{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:4px 0}
+.prow{width:var(--bs,360px);display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:64px}
+#diceSpot{flex:none;width:var(--bs,360px);height:92px}
+#boardWrap{flex:none;width:var(--bs,360px);height:var(--bs,360px);padding:0}
+#board{width:100%;height:100%;display:block;overflow:visible}
+.pslot{display:flex;align-items:center;gap:8px;min-width:0;max-width:46%;transition:opacity .2s}
+.pslot.rt{flex-direction:row-reverse;text-align:right}
+.pslot.out{opacity:.45}
+.av{position:relative;flex:none;width:54px;height:54px;border-radius:14px;border:3px solid #fff;display:flex;align-items:center;justify-content:center;font:30px/1 "Lilita One",Fredoka,system-ui,sans-serif;color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.35);box-shadow:0 4px 0 rgba(0,0,0,.3),inset 0 -5px 0 rgba(0,0,0,.18)}
+.av .md{position:absolute;right:-8px;top:-10px;font-size:20px;font-style:normal}
+.av .off{position:absolute;left:-8px;top:-10px;font-size:15px;font-style:normal}
+.pslot.cur .av{animation:avg 1s ease-in-out infinite;border-color:#ffeb3b}
+@keyframes avg{50%{box-shadow:0 4px 0 rgba(0,0,0,.3),0 0 0 5px rgba(255,235,59,.55),0 0 22px 6px rgba(255,235,59,.6)}}
+.an{min-width:0;display:flex;flex-direction:column;line-height:1.15}
+.an b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+.an small{font-size:12px;color:#c9d6f7;white-space:nowrap}
+.pslot.cur .an b{color:#ffeb3b}
+#game .bottom{background:rgba(8,20,60,.55);border-top:0}
+#game .banner{color:#fff}
+#game .banner b{color:#ffeb3b}
+#game .rollbtn{background:linear-gradient(180deg,#ffd54a,#ffb300);color:#4a2a00;border-color:#c77800;box-shadow:0 5px 0 #c77800}
+.tk{cursor:pointer}
+.tk .ring{opacity:0}
+.tk.mv .ring{opacity:1;animation:pls .8s infinite}
+.tk.mv .bob{animation:bob .6s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-5px)}}
+/* pódio */
+.win-name{font:42px/1.05 "Lilita One",Fredoka,system-ui,sans-serif;letter-spacing:1px;word-break:break-word}
+.pod{display:flex;align-items:flex-end;justify-content:center;gap:8px;margin-top:6px}
+.pcol{display:flex;flex-direction:column;align-items:center;gap:4px;width:31%;min-width:0}
+.pcol .av{width:50px;height:50px;font-size:26px}
+.pcol .pn{font-weight:800;font-size:14px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.blk{width:100%;border-radius:12px 12px 4px 4px;display:flex;align-items:flex-start;justify-content:center;padding-top:6px;font:26px "Lilita One",Fredoka,system-ui,sans-serif;color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.25)}
+.blk.b1{height:96px;background:linear-gradient(#ffd54a,#f4a300)}
+.blk.b2{height:70px;background:linear-gradient(#e2e8f0,#9aa6b8)}
+.blk.b3{height:50px;background:linear-gradient(#f0a868,#b8662a)}
 </style>
 </head>
 <body>
@@ -143,14 +187,20 @@ table.rk tr.top1 td{background:#fff6cc}
 
 <!-- JOGO -->
 <div class="screen" id="game">
-  <div class="top">
+  <div class="top" id="gTop">
     <div class="ttl" id="gTitle">Sala ----</div>
     <div class="timer" id="gTimer">0:30</div>
+    <button class="ibtn" id="bSound" aria-label="Som">🔊</button>
+    <button class="ibtn" id="bFull" aria-label="Tela cheia">⛶</button>
     <button class="ibtn" id="bMenu" aria-label="Menu">☰</button>
   </div>
-  <div class="chips" id="gChips"></div>
-  <div id="boardWrap"><svg id="board" viewBox="0 0 600 600" preserveAspectRatio="xMidYMid meet"></svg></div>
-  <div class="bottom">
+  <div id="stage">
+    <div id="diceSpot"></div>
+    <div class="prow" id="rowTop"><div class="pslot" id="pc0"></div><div style="flex:1"></div><div class="pslot rt" id="pc1"></div></div>
+    <div id="boardWrap"><svg id="board" viewBox="-10 -10 620 620" preserveAspectRatio="xMidYMid meet"></svg></div>
+    <div class="prow" id="rowBot"><div class="pslot" id="pc3"></div><div style="flex:1"></div><div class="pslot rt" id="pc2"></div></div>
+  </div>
+  <div class="bottom" id="gBottom">
     <div class="banner" id="gBanner"></div>
     <button class="rollbtn" id="bRoll" disabled>🎲 Jogar dado</button>
   </div>
@@ -376,7 +426,19 @@ function doMove(g, u, m, i, v) {
   if (v === 6 || caps > 0 || to === 56) { g.phase = "roll"; g.moves = []; newTimer(g); } else nextTurn(g);
 }
 function doRoll(g, u, forced) {
-  const v = forced || fairRoll(); const m = moverOf(g, u);
+  const m = moverOf(g, u);
+  // sem nenhuma peça no tabuleiro: joga DOIS dados para ajudar a sair (dois 6 tiram só uma peça)
+  const noneOut = g.tok[m].every(p => p === -1 || p === 56) && g.tok[m].includes(-1);
+  if (noneOut) {
+    const a = forced || fairRoll(), b = forced || fairRoll();
+    g.dice = {v: a, v2: b, ts: now(), by: u, m};
+    if (a !== 6 && b !== 6) { g.sixes = 0; logp(g, `🎲 ${nm(g, u)} tirou ${a} e ${b}: precisa de um 6 para sair`); nextTurn(g); return; }
+    g.sixes = (g.sixes || 0) + 1;
+    if (g.sixes >= 3) { logp(g, `🎲 ${nm(g, u)} tirou três 6 seguidos e perdeu a vez`); nextTurn(g); return; }
+    logp(g, `🎲 ${nm(g, u)} tirou ${a} e ${b}: uma peça saiu da base`);
+    doMove(g, u, m, g.tok[m].indexOf(-1), 6); return;
+  }
+  const v = forced || fairRoll();
   g.dice = {v, ts: now(), by: u, m};
   g.sixes = v === 6 ? (g.sixes || 0) + 1 : 0;
   if (g.sixes >= 3) { logp(g, `🎲 ${nm(g, u)} tirou três 6 seguidos e perdeu a vez`); nextTurn(g); return; }
@@ -570,54 +632,148 @@ async function startGame() {
   await update(ref(db, `${ROOT}/rooms/${roomCode}`), {"meta/status": "playing", game: buildGame(ps, duo ? "duo" : "solo")});
 }
 
+/* ================= SONS (gerados no próprio celular, sem arquivos) ================= */
+let AC = null, muted = localStorage.getItem("ld_mute") === "1";
+function ac() {
+  if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
+  if (AC.state === "suspended") AC.resume().catch(() => {});
+  return AC;
+}
+addEventListener("pointerdown", () => ac(), {passive: true});
+function noiseSrc(a, dur) {
+  const b = a.createBuffer(1, Math.max(1, Math.floor(a.sampleRate * dur)), a.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  const s = a.createBufferSource(); s.buffer = b; return s;
+}
+function env(a, g, t, peak, att, dec) { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + att); g.gain.exponentialRampToValueAtTime(0.0001, t + att + dec); }
+function tone(freq, t0, dur, type = "sine", vol = .18, slideTo) {
+  const a = ac(); if (!a || muted) return; const t = a.currentTime + t0;
+  const o = a.createOscillator(), g = a.createGain(); o.type = type; o.frequency.setValueAtTime(freq, t);
+  if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+  env(a, g, t, vol, .01, dur); o.connect(g).connect(a.destination); o.start(t); o.stop(t + dur + .05);
+}
+const SND = {
+  dice() {   // chocalho do dado rolando
+    const a = ac(); if (!a || muted) return;
+    for (let i = 0; i < 9; i++) {
+      const t = a.currentTime + i * .07 + Math.random() * .03, n = noiseSrc(a, .04), f = a.createBiquadFilter(), g = a.createGain();
+      f.type = "bandpass"; f.frequency.value = 1800 + Math.random() * 2200; f.Q.value = 4;
+      env(a, g, t, .35 * (1 - i / 11), .004, .035); n.connect(f).connect(g).connect(a.destination); n.start(t); n.stop(t + .05);
+    }
+  },
+  land() { tone(140, 0, .12, "triangle", .25, 70); },
+  step() { tone(520 + Math.random() * 60, 0, .06, "triangle", .1); },
+  slash() {  // corte de espada: "vuush" + brilho metálico
+    const a = ac(); if (!a || muted) return; const t = a.currentTime;
+    const n = noiseSrc(a, .35), f = a.createBiquadFilter(), g = a.createGain();
+    f.type = "bandpass"; f.Q.value = 2.5; f.frequency.setValueAtTime(600, t); f.frequency.exponentialRampToValueAtTime(7000, t + .16);
+    env(a, g, t, .7, .02, .22); n.connect(f).connect(g).connect(a.destination); n.start(t); n.stop(t + .36);
+    [2637, 3520, 4186].forEach((fr, i) => tone(fr, .12 + i * .005, .55, "sine", .07));
+  },
+  boo() {    // "buuuu" de fantasma
+    const a = ac(); if (!a || muted) return; const t = a.currentTime;
+    const out = a.createGain(), lp = a.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 1100;
+    out.gain.setValueAtTime(0.0001, t); out.gain.exponentialRampToValueAtTime(.32, t + .25); out.gain.setValueAtTime(.32, t + .9); out.gain.exponentialRampToValueAtTime(0.0001, t + 1.6);
+    const lfo = a.createOscillator(), lg = a.createGain(); lfo.frequency.value = 5.5; lg.gain.value = 16; lfo.connect(lg);
+    [0, 7].forEach(det => {
+      const o = a.createOscillator(); o.type = "triangle"; o.frequency.setValueAtTime(380 + det, t); o.frequency.exponentialRampToValueAtTime(150 + det, t + 1.5);
+      lg.connect(o.frequency); o.connect(lp); o.start(t); o.stop(t + 1.65);
+    });
+    lp.connect(out).connect(a.destination); lfo.start(t); lfo.stop(t + 1.65);
+  },
+  home() { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * .09, .25, "triangle", .14)); },
+  turn() { tone(880, 0, .18, "sine", .16); tone(1175, .14, .3, "sine", .16); },
+  win() {
+    [[523, 0], [659, .15], [784, .3], [1047, .45], [784, .62], [1047, .78]].forEach(([f, t]) => { tone(f, t, .35, "triangle", .16); tone(f / 2, t, .35, "sine", .1); });
+    [1047, 1319, 1568].forEach(f => tone(f, 1.0, 1.1, "triangle", .1));
+  }
+};
+function setMute(m) { muted = m; localStorage.setItem("ld_mute", m ? "1" : "0"); $("bSound").textContent = m ? "🔇" : "🔊"; }
+
+/* ================= VISÃO: a sua cor fica sempre no canto de baixo, à esquerda ================= */
+let VK = 0;   // quantos quartos de volta (sentido horário) o tabuleiro gira na sua tela
+function vp(pt) { let [x, y] = pt; for (let k = 0; k < VK; k++) [x, y] = [15 - y, x]; return [x, y]; }
+const cornerOf = col => (col + VK) % 4;   // 0 cima-esq · 1 cima-dir · 2 baixo-dir · 3 baixo-esq
+const P = (col, pos, i) => vp(tokenCell(col, pos, i));
+const initial = n => { const s = (n || "").replace(/🦆|😭/g, "").trim(); return (s[0] || "?").toUpperCase(); };
+
 /* ================= DESENHO DO TABULEIRO ================= */
 const svg = d3.select("#board");
-const boardG = svg.append("g"), tokG = svg.append("g");
+const defs = svg.append("defs");
+LC.forEach((c, i) => {
+  const gr = defs.append("radialGradient").attr("id", "pg" + i).attr("cx", "35%").attr("cy", "28%").attr("r", "80%");
+  gr.append("stop").attr("offset", "0%").attr("stop-color", "#ffffff").attr("stop-opacity", .9);
+  gr.append("stop").attr("offset", "18%").attr("stop-color", c.f);
+  gr.append("stop").attr("offset", "100%").attr("stop-color", c.d);
+});
+const shf = defs.append("filter").attr("id", "bshadow").attr("x", "-10%").attr("y", "-10%").attr("width", "120%").attr("height", "125%");
+shf.append("feDropShadow").attr("dx", 0).attr("dy", 6).attr("stdDeviation", 6).attr("flood-color", "#000").attr("flood-opacity", .5);
+defs.append("clipPath").attr("id", "bclip").append("rect").attr("width", 600).attr("height", 600).attr("rx", 18);
+const boardG = svg.append("g"), tokG = svg.append("g"), fxG = svg.append("g").style("pointer-events", "none");
+function starPath(cx, cy, R, r) {
+  let d = ""; for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r : R; d += (i ? "L" : "M") + (cx + rr * Math.cos(a)).toFixed(1) + "," + (cy + rr * Math.sin(a)).toFixed(1); }
+  return d + "Z";
+}
 function drawBoard() {
   const c = CELL;
-  boardG.append("rect").attr("width", 600).attr("height", 600).attr("rx", 14).attr("fill", "#ffffff");
+  boardG.selectAll("*").remove();
+  boardG.attr("transform", `rotate(${90 * VK},300,300)`);
+  boardG.append("rect").attr("x", -7).attr("y", -7).attr("width", 614).attr("height", 614).attr("rx", 24).attr("fill", "#0d1b45").attr("filter", "url(#bshadow)");
+  const B = boardG.append("g").attr("clip-path", "url(#bclip)");
+  B.append("rect").attr("width", 600).attr("height", 600).attr("fill", "#ffffff");
   // casas do caminho
   TRACK.forEach(([x, y], i) => {
-    const startCol = START.indexOf(i);
-    boardG.append("rect").attr("x", x * c).attr("y", y * c).attr("width", c).attr("height", c)
-      .attr("fill", startCol >= 0 ? LC[startCol].f : "#ffffff").attr("stroke", "#9ca3af").attr("stroke-width", 1);
-    if (SAFE.has(i) && startCol < 0) boardG.append("text").attr("x", x * c + c / 2).attr("y", y * c + c / 2 + 1).attr("text-anchor", "middle").attr("dominant-baseline", "central").attr("font-size", 24).attr("fill", "#9ca3af").text("★");
-    if (startCol >= 0) boardG.append("text").attr("x", x * c + c / 2).attr("y", y * c + c / 2 + 1).attr("text-anchor", "middle").attr("dominant-baseline", "central").attr("font-size", 22).attr("fill", "rgba(255,255,255,.85)").text("★");
+    const sc = START.indexOf(i);
+    B.append("rect").attr("x", x * c).attr("y", y * c).attr("width", c).attr("height", c).attr("fill", sc >= 0 ? LC[sc].f : "#ffffff").attr("stroke", "#c5cbd6").attr("stroke-width", 1.2);
+    if (sc >= 0) B.append("path").attr("d", starPath(x * c + c / 2, y * c + c / 2, 13, 5.6)).attr("fill", "#ffffff").attr("opacity", .95);
+    else if (SAFE.has(i)) B.append("path").attr("d", starPath(x * c + c / 2, y * c + c / 2, 13, 5.6)).attr("fill", "#eef1f6").attr("stroke", "#a3adbd").attr("stroke-width", 2).attr("stroke-linejoin", "round");
   });
-  // retas finais
-  HOMECOL.forEach((cells, col) => cells.forEach(([x, y]) => boardG.append("rect").attr("x", x * c).attr("y", y * c).attr("width", c).attr("height", c).attr("fill", LC[col].f).attr("stroke", "#9ca3af").attr("stroke-width", 1)));
-  // bases
+  // retas finais coloridas
+  HOMECOL.forEach((cells, col) => cells.forEach(([x, y]) => B.append("rect").attr("x", x * c).attr("y", y * c).attr("width", c).attr("height", c).attr("fill", LC[col].f).attr("stroke", "#c5cbd6").attr("stroke-width", 1.2)));
+  // setas na entrada de cada reta final
+  [0, 1, 2, 3].forEach(col => {
+    const [tx, ty] = TRACK[(START[col] + 50) % 52], [hx, hy] = HOMECOL[col][0];
+    const dx = Math.sign(hx - tx), dy = Math.sign(hy - ty), cx = tx * c + c / 2, cy = ty * c + c / 2, px = -dy, py = dx;
+    B.append("path").attr("d", `M${cx - dx * 5 + px * 9},${cy - dy * 5 + py * 9} L${cx + dx * 6},${cy + dy * 6} L${cx - dx * 5 - px * 9},${cy - dy * 5 - py * 9}`)
+      .attr("fill", "none").attr("stroke", LC[col].f).attr("stroke-width", 5.5).attr("stroke-linecap", "round").attr("stroke-linejoin", "round");
+  });
+  // bases (cantos coloridos com o quadro branco e as 4 bolinhas)
   [[0, 0], [9, 0], [9, 9], [0, 9]].forEach(([bx, by], col) => {
-    boardG.append("rect").attr("x", bx * c).attr("y", by * c).attr("width", 6 * c).attr("height", 6 * c).attr("fill", LC[col].f).attr("stroke", "#6b7280").attr("stroke-width", 1.5);
-    boardG.append("rect").attr("x", (bx + 1) * c).attr("y", (by + 1) * c).attr("width", 4 * c).attr("height", 4 * c).attr("rx", 18).attr("fill", "#ffffff");
-    BASESLOT[col].forEach(([sx, sy]) => boardG.append("circle").attr("cx", sx * c).attr("cy", sy * c).attr("r", 17).attr("fill", LC[col].l).attr("stroke", LC[col].f).attr("stroke-width", 3));
+    B.append("rect").attr("x", bx * c).attr("y", by * c).attr("width", 6 * c).attr("height", 6 * c).attr("fill", LC[col].f);
+    B.append("rect").attr("x", bx * c + 8).attr("y", by * c + 8).attr("width", 6 * c - 16).attr("height", 6 * c - 16).attr("rx", 14).attr("fill", "none").attr("stroke", "rgba(0,0,0,.14)").attr("stroke-width", 4);
+    B.append("rect").attr("x", (bx + .85) * c).attr("y", (by + .85) * c + 3).attr("width", 4.3 * c).attr("height", 4.3 * c).attr("rx", 22).attr("fill", "rgba(0,0,0,.22)");
+    B.append("rect").attr("x", (bx + .85) * c).attr("y", (by + .85) * c).attr("width", 4.3 * c).attr("height", 4.3 * c).attr("rx", 22).attr("fill", "#ffffff");
+    BASESLOT[col].forEach(([sx, sy]) => {
+      B.append("circle").attr("cx", sx * c).attr("cy", sy * c + 1.5).attr("r", 16).attr("fill", "#b9c0cc");
+      B.append("circle").attr("cx", sx * c).attr("cy", sy * c).attr("r", 15).attr("fill", "#d5dae2");
+    });
   });
   // centro (chegada)
   const m = 6 * c, M = 9 * c, mid = 7.5 * c;
   [[[m, m], [m, M]], [[m, m], [M, m]], [[M, m], [M, M]], [[m, M], [M, M]]].forEach((e, col) => {
-    boardG.append("path").attr("d", `M${e[0][0]},${e[0][1]} L${e[1][0]},${e[1][1]} L${mid},${mid} Z`).attr("fill", LC[col].f).attr("stroke", "#6b7280").attr("stroke-width", 1);
+    B.append("path").attr("d", `M${e[0][0]},${e[0][1]} L${e[1][0]},${e[1][1]} L${mid},${mid} Z`).attr("fill", LC[col].f).attr("stroke", "#ffffff").attr("stroke-width", 1.5);
   });
-  boardG.append("rect").attr("width", 600).attr("height", 600).attr("rx", 14).attr("fill", "none").attr("stroke", "#374151").attr("stroke-width", 4);
+  boardG.append("rect").attr("width", 600).attr("height", 600).attr("rx", 18).attr("fill", "none").attr("stroke", "#0d1b45").attr("stroke-width", 3);
 }
 drawBoard();
 
-/* ================= PEÇAS (desenho e animação) ================= */
+/* ================= PEÇAS (bonequinhos em forma de pino) ================= */
 let shownTok = null, animQ = Promise.resolve(), busy = 0;
 const enqueue = fn => { busy++; animQ = animQ.then(fn).catch(() => {}).then(() => { busy--; updateUI(); }); return animQ; };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+const PAWN_Y = -5;   // o pino fica "em pé" sobre a casa
 function layout(tok) {
-  // calcula onde cada peça fica; peças na mesma casa ficam lado a lado
   const g = R.game, groups = {};
   g.order.forEach(u => tok[u].forEach((p, i) => {
-    const [x, y] = tokenCell(g.col[u], p, i);
+    const [x, y] = P(g.col[u], p, i);
     const key = p === -1 ? `b${u}${i}` : (p >= 56 ? `f${g.col[u]}` : `${x},${y}`);
     (groups[key] = groups[key] || []).push({u, i, x, y});
   }));
   const pos = {};
-  const OFF = {1:[[0,0]], 2:[[-.2,0],[.2,0]], 3:[[-.2,-.17],[.2,-.17],[0,.2]], 4:[[-.2,-.2],[.2,-.2],[-.2,.2],[.2,.2]]};
+  const OFF = {1:[[0,0]], 2:[[-.22,0],[.22,0]], 3:[[-.22,-.12],[.22,-.12],[0,.2]], 4:[[-.22,-.15],[.22,-.15],[-.22,.2],[.22,.2]]};
   Object.values(groups).forEach(list => {
     const n = Math.min(list.length, 4), offs = OFF[n] || OFF[4];
-    list.forEach((t, k) => { const o = offs[k % offs.length]; pos[t.u + ":" + t.i] = {x: (t.x + o[0]) * CELL, y: (t.y + o[1]) * CELL, s: list.length > 1 ? .78 : 1}; });
+    list.forEach((t, k) => { const o = offs[k % offs.length]; pos[t.u + ":" + t.i] = {x: (t.x + o[0]) * CELL, y: (t.y + o[1]) * CELL + PAWN_Y, s: list.length > 1 ? .68 : 1}; });
   });
   return pos;
 }
@@ -627,19 +783,36 @@ function ensureTokens() {
   const sel = tokG.selectAll("g.tk").data(data, d => d.k);
   sel.exit().remove();
   const en = sel.enter().append("g").attr("class", "tk");
-  en.append("circle").attr("class", "ring").attr("r", 20).attr("fill", "none").attr("stroke", "#111827").attr("stroke-width", 3).attr("stroke-dasharray", "5 4");
-  en.append("circle").attr("class", "body").attr("r", 14).attr("stroke", "#1f2937").attr("stroke-width", 2.5);
-  en.append("circle").attr("class", "shine").attr("r", 5.5).attr("cx", -3.5).attr("cy", -4).attr("fill", "rgba(255,255,255,.55)");
+  const b = en.append("g").attr("class", "bob").append("g").attr("transform", "scale(1.32)");
+  b.append("ellipse").attr("class", "ring").attr("cx", 0).attr("cy", 11).attr("rx", 17).attr("ry", 7).attr("fill", "rgba(255,235,59,.35)").attr("stroke", "#ffeb3b").attr("stroke-width", 2.5);
+  b.append("ellipse").attr("cx", 0).attr("cy", 11).attr("rx", 11).attr("ry", 4).attr("fill", "rgba(0,0,0,.35)");
+  b.append("path").attr("class", "pp").attr("d", "M-10.5,9.5 C-10.5,2 -5.5,-1.5 -4,-5.5 L4,-5.5 C5.5,-1.5 10.5,2 10.5,9.5 Q0,13.5 -10.5,9.5 Z").attr("stroke-width", 1.3);
+  b.append("ellipse").attr("class", "pp").attr("cx", 0).attr("cy", -5.5).attr("rx", 6.8).attr("ry", 2.5).attr("stroke-width", 1.2);
+  b.append("circle").attr("class", "pp").attr("cx", 0).attr("cy", -12.5).attr("r", 7.4).attr("stroke-width", 1.3);
+  b.append("ellipse").attr("cx", -2.7).attr("cy", -15).attr("rx", 2.7).attr("ry", 1.9).attr("fill", "rgba(255,255,255,.9)");
+  b.append("path").attr("d", "M-6.8,7 C-6.8,2.5 -4.5,.3 -3.3,-2").attr("stroke", "rgba(255,255,255,.6)").attr("stroke-width", 1.9).attr("fill", "none").attr("stroke-linecap", "round");
+  b.append("circle").attr("cx", 0).attr("cy", -2).attr("r", 20).attr("fill", "transparent");
   en.on("click", (e, d) => onToken(d.u, d.i));
-  tokG.selectAll("g.tk").select(".body").attr("fill", d => LC[g.col[d.u]].f);
+  tokG.selectAll("g.tk").selectAll(".pp").attr("fill", function () { const d = d3.select(this.closest("g.tk")).datum(); return `url(#pg${g.col[d.u]})`; })
+    .attr("stroke", function () { const d = d3.select(this.closest("g.tk")).datum(); return LC[g.col[d.u]].d; });
 }
+function zSort(pos) { tokG.selectAll("g.tk").sort((a, b) => (pos[a.k] ? pos[a.k].y : 0) - (pos[b.k] ? pos[b.k].y : 0)); }
 function placeAll(tok) {
   ensureTokens();
   const pos = layout(tok);
-  tokG.selectAll("g.tk").interrupt().attr("transform", d => { const p = pos[d.k]; return `translate(${p.x},${p.y}) scale(${p.s})`; });
+  tokG.selectAll("g.tk").interrupt().attr("opacity", 1).attr("transform", d => { const p = pos[d.k]; return `translate(${p.x},${p.y}) scale(${p.s})`; });
+  zSort(pos);
+}
+function ghostFx(x, y) {
+  // risco de espada + fantasminha subindo
+  const sl = fxG.append("path").attr("d", `M${x - 26},${y - 22} L${x + 26},${y + 18}`).attr("stroke", "#ffffff").attr("stroke-width", 7).attr("stroke-linecap", "round").attr("opacity", 1);
+  sl.transition().duration(380).attr("stroke-width", 1).attr("opacity", 0).remove();
+  const gh = fxG.append("text").attr("x", x).attr("y", y).attr("text-anchor", "middle").attr("font-size", 34).attr("opacity", 0).text("👻");
+  gh.transition().delay(220).duration(250).attr("opacity", 1).transition().duration(1300).ease(d3.easeQuadOut).attr("y", y - 70).attr("opacity", 0).remove();
 }
 async function animateTokens(from, to) {
   const g = R.game; ensureTokens();
+  const fromPos = layout(from);
   const moved = [], captured = [];
   g.order.forEach(u => [0,1,2,3].forEach(i => {
     const a = from[u] ? from[u][i] : -1, b = to[u][i];
@@ -650,18 +823,25 @@ async function animateTokens(from, to) {
     const el = tokG.selectAll("g.tk").filter(d => d.u === mv.u && d.i === mv.i); el.raise();
     const steps = []; if (mv.a === -1) steps.push(0); else for (let p = mv.a + 1; p <= mv.b; p++) steps.push(p);
     for (const p of steps) {
-      const [x, y] = tokenCell(g.col[mv.u], p, mv.i);
-      await el.transition().duration(150).ease(d3.easeQuadOut).attr("transform", `translate(${x * CELL},${y * CELL}) scale(1.15)`).end().catch(() => {});
+      const [x, y] = P(g.col[mv.u], p, mv.i);
+      SND.step();
+      await el.transition().duration(165).ease(d3.easeQuadOut).attr("transform", `translate(${x * CELL},${y * CELL + PAWN_Y - 4}) scale(1.12)`).end().catch(() => {});
     }
+    if (mv.b === 56) SND.home();
   }
   if (captured.length) {
-    await sleep(150);
-    await Promise.all(captured.map(c => {
-      const el = tokG.selectAll("g.tk").filter(d => d.u === c.u && d.i === c.i); el.raise();
-      const [x, y] = tokenCell(g.col[c.u], -1, c.i);
-      return el.transition().duration(650).ease(d3.easeBackIn).attr("transform", `translate(${x * CELL},${y * CELL}) scale(1)`).end().catch(() => {});
+    SND.slash(); setTimeout(() => SND.boo(), 300);
+    try { navigator.vibrate && navigator.vibrate([60, 40, 120]); } catch (e) {}
+    await Promise.all(captured.map(async c => {
+      const k = c.u + ":" + c.i, fp = fromPos[k];
+      const el = tokG.selectAll("g.tk").filter(d => d.k === k); el.raise();
+      ghostFx(fp.x, fp.y);
+      await el.transition().duration(380).ease(d3.easeBackIn).attr("transform", `translate(${fp.x},${fp.y}) scale(0)`).end().catch(() => {});
+      const [x, y] = P(g.col[c.u], -1, c.i);
+      el.attr("transform", `translate(${x * CELL},${y * CELL + PAWN_Y}) scale(0)`);
+      await sleep(500);
+      await el.transition().duration(380).ease(d3.easeBackOut).attr("transform", `translate(${x * CELL},${y * CELL + PAWN_Y}) scale(1)`).end().catch(() => {});
     }));
-    try { navigator.vibrate && navigator.vibrate([60, 40, 60]); } catch (e) {}
   }
   placeAll(to);
 }
@@ -669,7 +849,7 @@ function highlight() {
   const g = R && R.game; if (!g) return;
   const can = !busy && !g.ended && cur(g) === uid && g.phase === "move";
   const movable = new Set(can ? g.moves.map(i => g.dice.m + ":" + i) : []);
-  tokG.selectAll("g.tk").select(".ring").classed("on", d => movable.has(d.k)).attr("stroke", d => LC[g.col[d.u]].d);
+  tokG.selectAll("g.tk").classed("mv", d => movable.has(d.k));
   tokG.selectAll("g.tk").filter(d => movable.has(d.k)).raise();
 }
 function onToken(u, i) {
@@ -679,50 +859,83 @@ function onToken(u, i) {
   aMove(i);
 }
 
-/* ================= DADO 3D (igual ao do War) ================= */
+/* ================= DADO 3D: cai sempre no espaço livre de cima da tela ================= */
 const PIPS = {1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
 const FACE_ROT = {1:[0,0], 6:[0,180], 3:[0,-90], 4:[0,90], 5:[-90,0], 2:[90,0]};
 const faceHTML = n => `<div class="face f${n}">${Array.from({length: 9}, (_, i) => `<i class="${PIPS[n].includes(i) ? "v" : ""}"></i>`).join("")}</div>`;
-function boardScreen(cx, cy) {
-  const pt = svg.node().createSVGPoint(); pt.x = cx * CELL; pt.y = cy * CELL;
-  const q = pt.matrixTransform(svg.node().getScreenCTM()); return [q.x, q.y];
-}
-function throwDie(v, col) {
+function throwDice(vals, fromLeft) {
   const L = $("diceLayer"); L.innerHTML = "";
-  const w = document.createElement("div"); w.className = "dw";
-  w.innerHTML = `<div class="dshadow"></div><div class="cube">${[1,2,3,4,5,6].map(faceHTML).join("")}</div><div class="dnum">${v}</div>`;
-  L.appendChild(w);
-  const cube = w.querySelector(".cube");
-  // o dado cai na base de quem jogou
-  let [x, y] = boardScreen(BASECENTER[col][0], BASECENTER[col][1]); x -= 27; y -= 27;
-  const fromLeft = col === 0 || col === 3;
-  const x0 = fromLeft ? -70 : innerWidth + 20, y0 = innerHeight * .8;
-  const mx = (x0 + x) / 2, my = Math.min(y0, y) - 160;
-  const [rx, ry] = FACE_ROT[v];
-  const sx = rx + 360 * (2 + Math.floor(Math.random() * 2)), sy = ry + 360 * (2 + Math.floor(Math.random() * 2));
-  const rz0 = (Math.random() * 300 + 200) * (fromLeft ? 1 : -1);
-  const T = 1150;
-  const path = w.animate([
-    {transform: `translate(${x0}px,${y0}px) scale(.7)`},
-    {transform: `translate(${mx}px,${my}px) scale(1.3)`, offset: .42},
-    {transform: `translate(${x}px,${y}px) scale(1)`, offset: .7},
-    {transform: `translate(${x + (fromLeft ? 8 : -8)}px,${y - 22}px) scale(1.06)`, offset: .83},
-    {transform: `translate(${x}px,${y}px) scale(1)`}
-  ], {duration: T, easing: "cubic-bezier(.25,.6,.35,1)", fill: "forwards"});
-  cube.animate([
-    {transform: `rotateX(${sx}deg) rotateY(${sy}deg) rotateZ(${rz0}deg)`},
-    {transform: `rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(0deg)`}
-  ], {duration: T, easing: "cubic-bezier(.15,.6,.25,1)", fill: "forwards"});
-  return path.finished.then(() => {
-    const z = w.animate([
-      {transform: `translate(${x}px,${y}px) scale(1)`},
-      {transform: `translate(${x}px,${y}px) scale(1.9)`, offset: .35},
-      {transform: `translate(${x}px,${y}px) scale(1.4)`}
-    ], {duration: 650, easing: "ease-out", fill: "forwards"});
-    w.querySelector(".dnum").classList.add("on");
-    try { navigator.vibrate && navigator.vibrate(25); } catch (e) {}
-    return z.finished;
-  });
+  const spot = $("diceSpot").getBoundingClientRect();
+  const cx = spot.left + spot.width / 2, cy = spot.top + spot.height / 2 + 14;
+  const gap = vals.length > 1 ? 40 : 0;
+  SND.dice();
+  return Promise.all(vals.map((v, n) => {
+    const w = document.createElement("div"); w.className = "dw";
+    w.innerHTML = `<div class="dshadow"></div><div class="cube">${[1,2,3,4,5,6].map(faceHTML).join("")}</div><div class="dnum">${v}</div>`;
+    L.appendChild(w);
+    const cube = w.querySelector(".cube");
+    const x = cx - 27 + (n ? gap : -gap), y = cy - 27;
+    const x0 = fromLeft ? -80 - n * 30 : innerWidth + 20 + n * 30, y0 = y + 140;
+    const mx = (x0 + x) / 2, my = Math.max(4, y - 70);
+    const [rx, ry] = FACE_ROT[v];
+    const sx = rx + 360 * (2 + Math.floor(Math.random() * 2)), sy = ry + 360 * (2 + Math.floor(Math.random() * 2));
+    const rz0 = (Math.random() * 300 + 200) * (fromLeft ? 1 : -1);
+    const T = 1100 + n * 90;
+    const path = w.animate([
+      {transform: `translate(${x0}px,${y0}px) scale(.7)`},
+      {transform: `translate(${mx}px,${my}px) scale(1.25)`, offset: .42},
+      {transform: `translate(${x}px,${y}px) scale(1)`, offset: .7},
+      {transform: `translate(${x + (fromLeft ? 8 : -8)}px,${y - 16}px) scale(1.05)`, offset: .83},
+      {transform: `translate(${x}px,${y}px) scale(1)`}
+    ], {duration: T, easing: "cubic-bezier(.25,.6,.35,1)", fill: "forwards"});
+    cube.animate([
+      {transform: `rotateX(${sx}deg) rotateY(${sy}deg) rotateZ(${rz0}deg)`},
+      {transform: `rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(0deg)`}
+    ], {duration: T, easing: "cubic-bezier(.15,.6,.25,1)", fill: "forwards"});
+    return path.finished.then(() => {
+      if (!n) SND.land();
+      const z = w.animate([
+        {transform: `translate(${x}px,${y}px) scale(1)`},
+        {transform: `translate(${x}px,${y}px) scale(1.45)`, offset: .35},
+        {transform: `translate(${x}px,${y}px) scale(1.15)`}
+      ], {duration: 600, easing: "ease-out", fill: "forwards"});
+      w.querySelector(".dnum").classList.add("on");
+      try { navigator.vibrate && navigator.vibrate(25); } catch (e) {}
+      return z.finished;
+    });
+  }));
+}
+
+/* ================= TELA CHEIA E ENCAIXE NO CELULAR ================= */
+function fitStage() {
+  if (!$("game").classList.contains("on")) return;
+  const used = $("gTop").offsetHeight + $("gBottom").offsetHeight + $("rowTop").offsetHeight + $("rowBot").offsetHeight + $("diceSpot").offsetHeight + 24;
+  const bs = Math.max(220, Math.min(innerWidth - 14, innerHeight - used, 680));
+  document.documentElement.style.setProperty("--bs", bs + "px");
+}
+addEventListener("resize", () => setTimeout(fitStage, 60));
+function goFull() {
+  const d = document.documentElement;
+  try { if (!document.fullscreenElement && d.requestFullscreen) d.requestFullscreen({navigationUI: "hide"}).catch(() => {}); } catch (e) {}
+}
+const isPhone = () => matchMedia("(pointer:coarse)").matches;
+
+/* ================= CONFETE ================= */
+function confetti(ms = 5500) {
+  const cv = document.createElement("canvas"), dpr = Math.min(2, devicePixelRatio || 1);
+  cv.style.cssText = "position:fixed;inset:0;width:100%;height:100%;z-index:60;pointer-events:none";
+  cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; document.body.appendChild(cv);
+  const x = cv.getContext("2d"); x.scale(dpr, dpr);
+  const cols = ["#E53935", "#43A047", "#FDD835", "#1E88E5", "#ffffff", "#FF9800", "#E91E63"];
+  const ps = Array.from({length: 170}, () => ({x: Math.random() * innerWidth, y: -20 - Math.random() * innerHeight * .8, vx: (Math.random() - .5) * 2.2, vy: 2 + Math.random() * 3, w: 6 + Math.random() * 6, h: 4 + Math.random() * 5, r: Math.random() * 6, vr: (Math.random() - .5) * .3, c: cols[Math.floor(Math.random() * cols.length)]}));
+  const t0 = performance.now();
+  (function fr(t) {
+    const el = t - t0; x.clearRect(0, 0, innerWidth, innerHeight);
+    x.globalAlpha = el > ms - 800 ? Math.max(0, (ms - el) / 800) : 1;
+    ps.forEach(p => { p.x += p.vx + Math.sin((el / 300) + p.r) * .6; p.y += p.vy; p.r += p.vr; if (p.y > innerHeight + 20 && el < ms - 1500) { p.y = -20; p.x = Math.random() * innerWidth; }
+      x.save(); x.translate(p.x, p.y); x.rotate(p.r); x.fillStyle = p.c; x.fillRect(-p.w / 2, -p.h / 2, p.w, p.h * Math.abs(Math.cos(p.r * 1.3)) + 1); x.restore(); });
+    if (el < ms) requestAnimationFrame(fr); else cv.remove();
+  })(t0);
 }
 
 /* ================= MODAIS E TELAS ================= */
@@ -738,23 +951,28 @@ function showTurnPop(g) {
   const m = moverOf(g, uid);
   showBig(`<div class="bp-title">SUA VEZ</div><div class="bp-sub">Toque em 🎲 Jogar dado</div>
     ${m !== uid ? `<div class="bp-small">Suas peças já chegaram! Agora você joga pelas peças de <b style="color:${LC[g.col[m]].f}">${esc(nm(g, m))}</b>.</div>` : `<div class="bp-small">Você é o <b style="color:${LC[g.col[uid]].f}">${LC[g.col[uid]].n.toUpperCase()}</b></div>`}`, 1600);
+  SND.turn();
   try { navigator.vibrate && navigator.vibrate([150, 80, 150]); } catch (e) {}
 }
+function avHTML(g, u) { return `<div class="av" style="background:${LC[g.col[u]].f}">${esc(initial(nm(g, u)))}</div>`; }
 function showEnd(g) {
-  let body;
+  let head, pod, rest = "";
   if (g.mode === "duo") {
     const W = g.order.filter(u => g.team[u] === g.winTeam), Lz = g.order.filter(u => g.team[u] !== g.winTeam);
-    body = `<div class="bp-sub">Dupla ${g.winTeam === 0 ? "A" : "B"} venceu!</div>
-      <div class="list" style="text-align:left">${W.map(u => `<div class="it">🥇 <i class="dot" style="background:${LC[g.col[u]].f}"></i>${esc(nm(g, u))}</div>`).join("")}${Lz.map(u => `<div class="it">🥈 <i class="dot" style="background:${LC[g.col[u]].f}"></i>${esc(nm(g, u))}</div>`).join("")}</div>`;
+    head = `<div class="bp-small" style="font-size:15px;font-weight:700">🏆 DUPLA ${g.winTeam === 0 ? "A" : "B"} VENCEU!</div><div class="win-name" style="color:var(--acc)">${W.map(u => esc(nm(g, u))).join(" & ")}</div>`;
+    pod = `<div class="pod">${W.map(u => `<div class="pcol">${avHTML(g, u)}<div class="pn">${esc(nm(g, u))}</div><div class="blk b1">1º</div></div>`).join("")}</div>`;
+    rest = `<div class="bp-small">2º lugar: ${Lz.map(u => esc(nm(g, u))).join(" e ")}</div>`;
   } else {
-    const med = ["🥇", "🥈", "🥉", "4º"];
-    body = `<div class="list" style="text-align:left">${g.fin.map((u, i) => `<div class="it"><b style="width:28px">${med[i]}</b><i class="dot" style="background:${LC[g.col[u]].f}"></i>${esc(nm(g, u))}${u === uid ? " (você)" : ""}</div>`).join("")}</div>`;
+    const f = g.fin;
+    head = `<div class="bp-small" style="font-size:15px;font-weight:700">🏆 VENCEDOR</div><div class="win-name" style="color:var(--acc)">${esc(nm(g, f[0]))}</div>`;
+    pod = `<div class="pod">${[1, 0, 2].filter(i => f[i] !== undefined).map(i => `<div class="pcol">${avHTML(g, f[i])}<div class="pn">${esc(nm(g, f[i]))}</div><div class="blk b${i + 1}">${i + 1}º</div></div>`).join("")}</div>`;
+    if (f[3] !== undefined) rest = `<div class="bp-small">4º lugar: ${esc(nm(g, f[3]))}</div>`;
   }
-  showBig(`<div style="font-size:54px">🏆</div><div class="bp-title" style="font-size:38px">FIM DE JOGO</div>${body}
-    <div class="bp-small">O resultado já foi somado no ranking geral.</div>
+  showBig(`${head}${pod}${rest}
     <button class="btn" id="bigRank">🏆 Ver ranking</button>
     ${R.meta.host === uid ? `<button class="btn pri" id="bigNew">Nova partida</button>` : `<div class="bp-small">O criador da sala pode começar uma nova partida.</div>`}
     <button class="btn" id="bigOk">Fechar</button>`);
+  confetti(); SND.win();
   $("bigRank").onclick = () => { closeBig(); openRanking(); };
   if ($("bigNew")) $("bigNew").onclick = async () => { closeBig(); await update(ref(db, `${ROOT}/rooms/${roomCode}`), {"meta/status": "lobby", game: null}); };
 }
@@ -771,6 +989,7 @@ function openMenu() {
   $("mHelp").onclick = () => { openModal(`<h3>Regras</h3><div class="list" style="font-size:13px;line-height:1.45">
     <div class="it">🎲 O dado é justo: cada número de 1 a 6 tem a mesma chance.</div>
     <div class="it">🚪 Para tirar uma peça da base, precisa tirar 6.</div>
+    <div class="it">🎲🎲 Sem nenhuma peça no tabuleiro? Você joga 2 dados para ajudar a sair. Se sair um 6 (ou dois), sai só uma peça e você joga de novo.</div>
     <div class="it">🔁 Tirou 6, joga de novo. Três 6 seguidos: perde a vez.</div>
     <div class="it">💥 Caiu numa casa com peça adversária: ela volta para a base e você joga de novo.</div>
     <div class="it">★ Casas com estrela (e as de saída) são seguras: ninguém é capturado nelas.</div>
@@ -791,7 +1010,7 @@ let firstSnap = true, lastDiceTs = null, lastTurnNo = null, endShown = null;
 function render() {
   if (!R) return show("home");
   if (R.meta.status === "lobby") { shownTok = null; endShown = null; return renderLobby(); }
-  show("game"); renderGame();
+  const wasOn = $("game").classList.contains("on"); show("game"); if (!wasOn) requestAnimationFrame(fitStage); renderGame();
 }
 function renderLobby() {
   show("lobby");
@@ -820,10 +1039,12 @@ function renderLobby() {
 function renderGame() {
   const g = R.game; if (!g) return;
   // animações: primeiro o dado, depois as peças andando
+  const k = g.col[uid] !== undefined ? (3 - g.col[uid] + 4) % 4 : 0;
+  if (k !== VK) { VK = k; drawBoard(); firstSnap = true; }
   const tok = {}; g.order.forEach(u => tok[u] = g.tok[u].slice());
   if (!shownTok || firstSnap) { shownTok = tok; lastDiceTs = g.dice ? g.dice.ts : null; placeAll(tok); }
   else {
-    if (g.dice && g.dice.ts !== lastDiceTs) { lastDiceTs = g.dice.ts; const d = g.dice, col = g.col[d.by]; enqueue(() => throwDie(d.v, col)); }
+    if (g.dice && g.dice.ts !== lastDiceTs) { lastDiceTs = g.dice.ts; const d = g.dice, col = g.col[d.by]; const left = cornerOf(col) === 0 || cornerOf(col) === 3; enqueue(() => throwDice(d.v2 ? [d.v, d.v2] : [d.v], left)); }
     if (JSON.stringify(tok) !== JSON.stringify(shownTok)) { const from = shownTok; shownTok = tok; enqueue(() => animateTokens(from, tok)); }
   }
   // sua vez
@@ -839,15 +1060,19 @@ function updateUI() {
   const g = R && R.game; if (!g || !R.meta || R.meta.status !== "playing") return;
   $("gTitle").innerHTML = `Sala ${roomCode} <small>· ${g.mode === "duo" ? "Duplas" : "Todos x todos"}</small>`;
   const med = ["🥇", "🥈", "🥉", "4º"];
-  $("gChips").innerHTML = g.order.map(u => {
-    const home = g.tok[u].filter(p => p === 56).length, on = R.players[u] && R.players[u].online;
-    const place = g.mode !== "duo" && g.fin.includes(u) ? med[g.fin.indexOf(u)] + " " : "";
-    return `<div class="chip ${u === cur(g) && !g.ended ? "cur" : ""} ${isOut(g, u) && !g.ended ? "out" : ""}"><i class="dot" style="background:${LC[g.col[u]].f}"></i>${place}${g.mode === "duo" ? `<b>${g.team[u] ? "B" : "A"}</b> ` : ""}${esc(nm(g, u))}${u === uid ? " (você)" : ""} · 🏠${home}/4${on ? "" : " 📴"}</div>`;
-  }).join("");
+  [0, 1, 2, 3].forEach(c => { const el = $("pc" + c); el.innerHTML = ""; el.className = "pslot" + (c === 1 || c === 2 ? " rt" : ""); });
+  g.order.forEach(u => {
+    const el = $("pc" + cornerOf(g.col[u])), home = g.tok[u].filter(p => p === 56).length, on = R.players[u] && R.players[u].online;
+    const place = g.mode !== "duo" && g.fin.includes(u) ? med[g.fin.indexOf(u)] : "";
+    if (u === cur(g) && !g.ended) el.classList.add("cur");
+    if (isOut(g, u) && !g.ended) el.classList.add("out");
+    el.innerHTML = `<div class="av" style="background:${LC[g.col[u]].f}">${esc(initial(nm(g, u)))}${place ? `<i class="md">${place}</i>` : ""}${on ? "" : `<i class="off">📴</i>`}</div>
+      <div class="an"><b>${esc(nm(g, u))}</b><small>${u === uid ? "você · " : ""}${g.mode === "duo" ? `Dupla ${g.team[u] ? "B" : "A"} · ` : ""}🏠 ${home}/4</small></div>`;
+  });
   const mine = !g.ended && cur(g) === uid;
   let txt;
   if (g.ended) txt = g.mode === "duo" ? `🏆 <b>Dupla ${g.winTeam ? "B" : "A"}</b> venceu!` : `🏆 <b>${esc(nm(g, g.fin[0]))}</b> venceu!`;
-  else if (busy) txt = g.dice ? `🎲 ${esc(nm(g, g.dice.by))} tirou <b>${g.dice.v}</b>` : "…";
+  else if (busy) txt = g.dice ? `🎲 ${esc(nm(g, g.dice.by))} tirou <b>${g.dice.v}</b>${g.dice.v2 ? ` e <b>${g.dice.v2}</b>` : ""}` : "…";
   else if (mine && g.phase === "roll") txt = moverOf(g, uid) !== uid ? `Sua vez! Você joga pelas peças de <b>${esc(nm(g, moverOf(g, uid)))}</b>.` : "<b>Sua vez!</b> Toque em 🎲 Jogar dado.";
   else if (mine && g.phase === "move") txt = `Você tirou <b>${g.dice.v}</b>. Toque na peça que vai andar (as que piscam).`;
   else txt = `Vez de <b style="color:${LC[g.col[cur(g)]].f}">${esc(nm(g, cur(g)))}</b>${g.phase === "move" ? ` · escolhendo a peça (tirou ${g.dice.v})` : ""}`;
@@ -867,14 +1092,18 @@ setInterval(() => {
 
 /* ================= BOTÕES ================= */
 const safeRun = fn => fn().catch(e => { console.error(e); toast(String(e && (e.code || e.message) || "").includes("PERMISSION") || String(e).toLowerCase().includes("permission") ? "O Firebase bloqueou o acesso: publique as regras novas (Realtime Database → Regras)." : "Erro: " + (e.message || e), 5000); });
-$("bCreate").onclick = () => uid ? safeRun(createRoom) : toast("Ainda conectando…");
-$("bJoin").onclick = () => uid ? safeRun(() => joinRoom($("codeIn").value)) : toast("Ainda conectando…");
+$("bCreate").onclick = () => { if (isPhone()) goFull(); }; $("bCreate").addEventListener("click", () => uid ? safeRun(createRoom) : toast("Ainda conectando…"));
+$("bJoin").onclick = () => { if (isPhone()) goFull(); }; $("bJoin").addEventListener("click", () => uid ? safeRun(() => joinRoom($("codeIn").value)) : toast("Ainda conectando…"));
 $("codeIn").addEventListener("keydown", e => { if (e.key === "Enter") $("bJoin").click(); });
 $("bRank").onclick = () => uid ? openRanking() : toast("Ainda conectando…");
 $("bShare").onclick = share;
 $("bStart").onclick = startGame;
 $("bLeaveLobby").onclick = leaveRoom;
 $("bMenu").onclick = openMenu;
+$("bSound").onclick = () => { setMute(!muted); if (!muted) { ac(); SND.turn(); } };
+$("bFull").onclick = () => { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); else goFull(); setTimeout(fitStage, 300); };
+setMute(muted);
+document.addEventListener("fullscreenchange", () => setTimeout(fitStage, 200));
 $("bShuffle").onclick = async () => {
   const us = shuffle(Object.keys(R.players)); const upd = {};
   us.forEach((u, i) => upd[`players/${u}/team`] = i < 2 ? 0 : 1);
