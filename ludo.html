@@ -229,6 +229,46 @@ const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { c
 const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let toastT = null;
 function toast(msg, ms = 2600) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), ms); }
+
+/* ===== ADM: escolhe o número do dado (só para testes; não entra no ranking) ===== */
+const isAdmName = n => (n || "").replace(/🦆|😭/g, "").trim().toLowerCase() === "adm";
+const amAdm = () => localStorage.getItem("adm_ok") === "1" && isAdmName(localStorage.getItem("ld_name"));
+let forcedDie = 0;
+function admAuth() {
+  if (localStorage.getItem("adm_ok") === "1") return Promise.resolve(true);
+  return new Promise(res => {
+    const o = document.createElement("div");
+    o.style.cssText = "position:fixed;inset:0;z-index:100000;background:rgba(15,23,42,.6);display:flex;align-items:center;justify-content:center;padding:20px";
+    o.innerHTML = `<div style="background:#fff;color:#0f172a;border-radius:16px;padding:18px;width:100%;max-width:300px;font:600 15px system-ui;box-shadow:0 10px 30px rgba(0,0,0,.35)">
+      <div style="font-size:18px;font-weight:800;margin-bottom:10px">🔒 Senha do ADM</div>
+      <input id="admPw" type="password" autocomplete="off" placeholder="Senha" style="width:100%;box-sizing:border-box;padding:12px;border:2px solid #cbd5e1;border-radius:10px;font:600 16px system-ui">
+      <div id="admErr" style="color:#dc2626;font-size:13px;min-height:18px;margin:6px 0"></div>
+      <div style="display:flex;gap:8px"><button id="admNo" style="flex:1;padding:11px;border:0;border-radius:10px;background:#e2e8f0;font:700 15px system-ui">Cancelar</button>
+      <button id="admOk" style="flex:1;padding:11px;border:0;border-radius:10px;background:#2563eb;color:#fff;font:700 15px system-ui">Entrar</button></div></div>`;
+    document.body.appendChild(o);
+    const inp = o.querySelector("#admPw"); setTimeout(() => inp.focus(), 50);
+    const done = v => { o.remove(); res(v); };
+    const tryIt = () => { if (inp.value === "adm123") { localStorage.setItem("adm_ok", "1"); done(true); } else { o.querySelector("#admErr").textContent = "Senha errada."; inp.value = ""; inp.focus(); } };
+    o.querySelector("#admOk").onclick = tryIt;
+    inp.addEventListener("keydown", e => { if (e.key === "Enter") tryIt(); });
+    o.querySelector("#admNo").onclick = () => done(false);
+  });
+}
+const pickDie = fallback => (amAdm() && forcedDie) ? forcedDie : fallback();
+(function admPanel() {
+  const st = document.createElement("style");
+  st.textContent = `#admDie{position:fixed;left:6px;top:50%;transform:translateY(-50%);z-index:99999;display:none;flex-direction:column;gap:4px;background:rgba(15,23,42,.88);padding:6px;border-radius:12px;font:700 14px system-ui;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+  #admDie .t{font-size:9px;text-align:center;opacity:.8;letter-spacing:1px}
+  #admDie button{width:34px;height:30px;border:0;border-radius:8px;background:#334155;color:#fff;font:700 14px system-ui;cursor:pointer}
+  #admDie button.on{background:#f59e0b;color:#111}`;
+  document.head.appendChild(st);
+  const p = document.createElement("div"); p.id = "admDie";
+  p.innerHTML = `<div class="t">ADM</div><button data-v="0" class="on">🎲</button>` + [1,2,3,4,5,6].map(v => `<button data-v="${v}">${v}</button>`).join("");
+  p.onclick = e => { const b = e.target.closest("button"); if (!b) return; forcedDie = +b.dataset.v; p.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); };
+  const add = () => document.body.appendChild(p);
+  document.body ? add() : addEventListener("DOMContentLoaded", add);
+  setInterval(() => { p.style.display = amAdm() ? "flex" : "none"; }, 700);
+})();
 function show(id) { ["home","lobby","game"].forEach(s => $(s).classList.toggle("on", s === id)); }
 
 // DADO JUSTO: cada número de 1 a 6 tem exatamente a mesma chance (1/6).
@@ -335,8 +375,8 @@ function doMove(g, u, m, i, v) {
   // tirou 6, capturou ou chegou em casa: joga de novo
   if (v === 6 || caps > 0 || to === 56) { g.phase = "roll"; g.moves = []; newTimer(g); } else nextTurn(g);
 }
-function doRoll(g, u) {
-  const v = fairRoll(); const m = moverOf(g, u);
+function doRoll(g, u, forced) {
+  const v = forced || fairRoll(); const m = moverOf(g, u);
   g.dice = {v, ts: now(), by: u, m};
   g.sixes = v === 6 ? (g.sixes || 0) + 1 : 0;
   if (g.sixes >= 3) { logp(g, `🎲 ${nm(g, u)} tirou três 6 seguidos e perdeu a vez`); nextTurn(g); return; }
@@ -378,7 +418,7 @@ function aRoll() {
     if (g.ended) return fail("A partida acabou.");
     if (cur(g) !== uid) return fail("Não é a sua vez.");
     if (g.phase !== "roll") return fail("Escolha uma peça para mover.");
-    doRoll(g, uid);
+    doRoll(g, uid, amAdm() ? forcedDie : 0);
   });
 }
 function aMove(i) {
@@ -414,6 +454,7 @@ async function claimAndSaveRanking(g) {
   if (!res || !res.committed) return;
   for (const u of g.order) {
     const rn = rankName(g.names[u]);
+    if (!FRIENDS.includes(rn)) continue;   // só os 4 amigos entram no ranking
     await runTransaction(ref(db, `${ROOT}/ranking/${rankKey(rn)}`), e => {
       e = e || {n: rn, p1:0, p2:0, p3:0, p4:0, dw:0, dl:0, games:0};
       e.n = rn; e.games = (e.games || 0) + 1;
@@ -425,7 +466,7 @@ async function claimAndSaveRanking(g) {
 }
 async function openRanking() {
   let rows = [];
-  try { const s = await get(ref(db, `${ROOT}/ranking`)); rows = Object.values(s.val() || {}); } catch (e) { return toast("Não foi possível abrir o ranking: confira as regras do Firebase."); }
+  try { const s = await get(ref(db, `${ROOT}/ranking`)); rows = Object.values(s.val() || {}).filter(r => FRIENDS.includes(r.n)); } catch (e) { return toast("Não foi possível abrir o ranking: confira as regras do Firebase."); }
   FRIENDS.forEach(f => { if (!rows.some(r => r.n === f)) rows.push({n: f, p1:0, p2:0, p3:0, p4:0, dw:0, dl:0, games:0}); });
   rows.sort((a, b) => (b.p1 - a.p1) || ((b.dw || 0) - (a.dw || 0)) || (b.p2 - a.p2) || (b.p3 - a.p3) || (a.n > b.n ? 1 : -1));
   openModal(`<h3>🏆 Ranking geral</h3>
@@ -441,6 +482,7 @@ function genCode() { const L = "ABCDEFGHJKLMNPQRSTUVWXYZ"; return Array.from({le
 async function createRoom() {
   const raw = savedName(); if (!raw) return toast("Digite seu nome.");
   if (isThomas(raw)) return toast(THOMAS_MSG, 4000);
+  if (isAdmName(raw) && !(await admAuth())) return;
   localStorage.setItem("ld_name", raw); const name = funName(raw);
   let code;
   for (let i = 0; i < 6; i++) { code = genCode(); const s = await get(ref(db, `${ROOT}/rooms/${code}/meta`)); if (!s.exists()) break; }
@@ -452,6 +494,7 @@ async function joinRoom(code) {
   if (code.length !== 4) return toast("O código tem 4 letras.");
   const raw = savedName(); if (!raw) return toast("Digite seu nome.");
   if (isThomas(raw)) return toast(THOMAS_MSG, 4000);
+  if (isAdmName(raw) && !(await admAuth())) return;
   localStorage.setItem("ld_name", raw); const name = funName(raw);
   const s = await get(ref(db, `${ROOT}/rooms/${code}`));
   if (!s.exists()) return toast("Sala não encontrada.");
