@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#cfe9ff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Ludo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Lilita+One&family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#cfe9ff;--panel:#ffffff;--panel2:#e6f3ff;--line:#a9d3f5;--txt:#16365c;--mut:#5a7ea3;--acc:#3a97e6;--accd:#1f6fb8;--ok:#22c55e}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font-family:"Baloo 2",Fredoka,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overscroll-behavior:none;-webkit-user-select:none;user-select:none}
+button{font:inherit;color:inherit;border:0;cursor:pointer;background:none}
+input{font:inherit}
+.screen{position:fixed;inset:0;display:none;flex-direction:column}
+.screen.on{display:flex}
+.center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:14px;overflow:auto}
+.logo{font-family:"Lilita One",Fredoka,system-ui,sans-serif;font-size:76px;text-align:center;line-height:1;letter-spacing:3px;text-shadow:0 5px 0 rgba(22,54,92,.18)}
+.logo .r{color:#E53935}.logo .g{color:#43A047}.logo .y{color:#FDD835}.logo .b{color:#1E88E5}
+.sub{color:var(--mut);font-size:14px;text-align:center;max-width:320px}
+.card{background:var(--panel);border:2px solid var(--line);border-radius:22px;box-shadow:0 6px 0 rgba(58,151,230,.15);padding:18px;width:100%;max-width:360px;display:flex;flex-direction:column;gap:10px}
+.inp{width:100%;padding:13px 16px;border-radius:16px;border:2px solid var(--line);background:#f5faff;font-weight:600;color:var(--txt);font-size:16px;outline:none;-webkit-user-select:text;user-select:text}
+.inp:focus{border-color:var(--acc)}
+.btn{padding:13px 16px;border-radius:16px;background:var(--panel2);border:2px solid var(--line);font-weight:700;font-size:16px;color:var(--accd);box-shadow:0 4px 0 #a9d3f5;transition:transform .08s}
+.btn:active,.rollbtn:active{transform:translateY(3px);box-shadow:none}
+.btn.pri{background:var(--acc);color:#fff;border-color:var(--accd);box-shadow:0 4px 0 var(--accd)}
+.btn.red{background:#ef5350;border-color:#c62828;color:#fff;box-shadow:0 4px 0 #c62828}
+.btn:disabled{opacity:.4;cursor:default}
+.row{display:flex;gap:8px}
+.row>*{flex:1}
+.lbl{font-size:13px;color:var(--mut)}
+.code{font-family:"Lilita One",system-ui,sans-serif;font-size:50px;letter-spacing:10px;text-align:center;color:var(--acc)}
+.plist{display:flex;flex-direction:column;gap:8px}
+.pitem{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--panel2);flex-wrap:wrap}
+.dot{width:14px;height:14px;border-radius:50%;flex:none;border:2px solid #fff}
+.on-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);margin-left:auto}
+.on-dot.off{background:#64748b}
+.tbtn{padding:6px 11px;border-radius:999px;border:2px solid var(--line);font-size:13px;font-weight:700;background:#fff;color:var(--accd)}
+.tbtn.sel{background:var(--acc);color:#fff;border-color:var(--accd)}
+/* jogo */
+.top{display:flex;align-items:center;gap:8px;padding:8px 10px;padding-top:max(8px,env(safe-area-inset-top));background:var(--panel);border-bottom:1px solid var(--line)}
+.top .ttl{font-weight:800;font-size:15px;white-space:nowrap}
+.top .ttl small{color:var(--mut);font-weight:500}
+.timer{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums;padding:5px 10px;border-radius:999px;background:var(--panel2);font-size:14px}
+.timer.low{background:#ef5350;color:#fff}
+.ibtn{width:36px;height:36px;border-radius:12px;background:var(--panel2);color:var(--accd);border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:16px}
+.chips{display:flex;gap:6px;padding:6px 8px;overflow-x:auto;background:var(--panel);border-bottom:1px solid var(--line);scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--panel2);font-size:13px;font-weight:600;border:2px solid transparent;white-space:nowrap}
+.chip.cur{border-color:var(--acc)}
+.chip.out{opacity:.55}
+.chip .dot{width:11px;height:11px;border-width:1.5px}
+#boardWrap{flex:1;display:flex;align-items:center;justify-content:center;padding:8px;min-height:0;position:relative}
+#board{width:100%;height:100%;display:block}
+.tk{cursor:pointer}
+.ring{opacity:0}
+.ring.on{opacity:1;animation:pls .9s infinite}
+@keyframes pls{50%{opacity:.15}}
+.bottom{background:var(--panel);border-top:1px solid var(--line);padding:10px;padding-bottom:max(10px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px}
+.banner{font-size:15px;line-height:1.35;min-height:20px;text-align:center}
+.banner b{color:var(--acc)}
+.rollbtn{font:26px "Lilita One",Fredoka,system-ui,sans-serif;letter-spacing:1px;padding:14px;border-radius:20px;background:var(--acc);color:#fff;width:100%;border:2px solid var(--accd);box-shadow:0 5px 0 var(--accd);transition:transform .08s}
+.rollbtn:disabled{opacity:.35}
+.acts{display:flex;gap:6px}
+.acts .btn{padding:10px 6px;font-size:13px;flex:1}
+/* modal */
+.back{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;justify-content:center;z-index:20}
+.back.on{display:flex}
+.sheet{background:var(--panel);border:1px solid var(--line);border-bottom:0;border-radius:18px 18px 0 0;width:100%;max-width:520px;max-height:85vh;overflow:auto;padding:16px;padding-bottom:max(16px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px}
+.sheet h3{margin:0;font-size:22px;font-family:"Lilita One",Fredoka,system-ui,sans-serif;font-weight:400;color:var(--accd)}
+.list{display:flex;flex-direction:column;gap:6px;font-size:14px}
+.list .it{padding:9px 11px;background:var(--panel2);border-radius:10px;display:flex;align-items:center;gap:8px}
+.list .it .r{margin-left:auto;color:var(--mut);font-size:13px}
+table.rk{width:100%;border-collapse:collapse;font-size:14px}
+table.rk th{font-size:12px;color:var(--mut);font-weight:600;padding:6px 4px;text-align:center}
+table.rk td{padding:9px 4px;text-align:center;border-top:1px solid var(--line)}
+table.rk td:first-child,table.rk th:first-child{text-align:left}
+table.rk tr.top1 td{background:#fff6cc}
+#toast{position:fixed;left:50%;bottom:130px;transform:translateX(-50%);background:#16365c;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:50;display:none;max-width:90vw;text-align:center;border:1px solid var(--line)}
+#toast.on{display:block}
+/* dado 3D (igual ao do War) */
+#diceLayer{position:fixed;inset:0;pointer-events:none;z-index:40;perspective:800px}
+.dw{position:absolute;left:0;top:0;width:54px;height:54px;will-change:transform}
+.dshadow{position:absolute;left:5px;top:50px;width:44px;height:11px;border-radius:50%;background:rgba(0,0,0,.4);filter:blur(3px)}
+.cube{width:54px;height:54px;position:relative;transform-style:preserve-3d}
+.face{position:absolute;inset:0;border-radius:11px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:8px;box-shadow:inset 0 0 0 2px rgba(0,0,0,.28),inset 0 -4px 0 rgba(0,0,0,.15);backface-visibility:hidden;background:#f8fafc}
+.face i{width:9px;height:9px;border-radius:50%;place-self:center;visibility:hidden;background:#111}.face i.v{visibility:visible}
+.f1{transform:translateZ(27px)}.f6{transform:rotateY(180deg) translateZ(27px)}.f3{transform:rotateY(90deg) translateZ(27px)}.f4{transform:rotateY(-90deg) translateZ(27px)}.f5{transform:rotateX(90deg) translateZ(27px)}.f2{transform:rotateX(-90deg) translateZ(27px)}
+.dnum{position:absolute;left:50%;top:-38px;transform:translateX(-50%) scale(.4);font:700 32px Fredoka,system-ui,sans-serif;color:#fff;text-shadow:0 3px 0 #000,0 0 8px rgba(0,0,0,.8);opacity:0;transition:all .25s cubic-bezier(.3,1.6,.5,1)}
+.dnum.on{opacity:1;transform:translateX(-50%) scale(1)}
+/* telas grandes */
+#bigPop{position:fixed;inset:0;z-index:45;display:none;align-items:center;justify-content:center;background:rgba(22,54,92,.45);padding:18px}
+#bigPop.on{display:flex}
+.bp{width:min(420px,100%);max-height:92vh;overflow:auto;background:linear-gradient(180deg,#ffffff,#e6f3ff);border:3px solid var(--acc);border-radius:24px;padding:20px 18px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.6);animation:pop .4s ease-out;display:flex;flex-direction:column;gap:12px}
+.bp-title{font:52px/1 "Lilita One",Fredoka,system-ui,sans-serif;color:var(--acc);letter-spacing:2px;text-shadow:0 4px 0 var(--accd)}
+.bp-sub{font:700 20px "Baloo 2",Fredoka,system-ui,sans-serif}
+.bp-small{font-size:13px;color:var(--mut)}
+.bp .btn{font:20px "Lilita One",Fredoka,system-ui,sans-serif;letter-spacing:.5px;padding:13px}
+@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
+</style>
+</head>
+<body>
+
+<!-- INÍCIO -->
+<div class="screen on" id="home">
+  <div class="center">
+    <div class="logo"><span class="r">L</span><span class="g">U</span><span class="y">D</span><span class="b">O</span></div>
+    <div class="sub">De 2 a 4 jogadores, ou dupla contra dupla. Online e ao vivo.</div>
+    <div class="card">
+      <input class="inp" id="name" maxlength="14" placeholder="Seu nome">
+      <button class="btn pri" id="bCreate">Criar sala</button>
+    </div>
+    <div class="card">
+      <div class="lbl">Entrar numa sala</div>
+      <div class="row"><input class="inp" id="codeIn" maxlength="4" placeholder="CÓDIGO" style="text-transform:uppercase;letter-spacing:4px;text-align:center"><button class="btn" id="bJoin" style="flex:.6">Entrar</button></div>
+    </div>
+    <button class="btn" id="bRank" style="width:100%;max-width:360px">🏆 Ranking geral</button>
+    <a href="index.html" class="btn" style="width:100%;max-width:360px;text-align:center;text-decoration:none">⬅ Menu de jogos</a>
+    <div class="sub" id="authMsg">Conectando…</div>
+  </div>
+</div>
+
+<!-- SALA -->
+<div class="screen" id="lobby">
+  <div class="center">
+    <div class="lbl">Código da sala</div>
+    <div class="code" id="lCode">----</div>
+    <button class="btn" id="bShare">Copiar convite</button>
+    <div class="card">
+      <div class="lbl">Modo de jogo</div>
+      <div class="row" id="lMode"><button class="btn" data-m="solo">Todos contra todos</button><button class="btn" data-m="duo">Dupla x Dupla</button></div>
+      <div class="lbl">Jogadores (<span id="lCount">0</span>/4)</div>
+      <div class="plist" id="lPlayers"></div>
+      <button class="btn" id="bShuffle" style="display:none">🔀 Sortear duplas</button>
+    </div>
+    <button class="btn pri" id="bStart" style="width:100%;max-width:360px">Começar partida</button>
+    <div class="sub" id="lWait"></div>
+    <button class="btn" id="bLeaveLobby" style="width:100%;max-width:360px">Sair da sala</button>
+  </div>
+</div>
+
+<!-- JOGO -->
+<div class="screen" id="game">
+  <div class="top">
+    <div class="ttl" id="gTitle">Sala ----</div>
+    <div class="timer" id="gTimer">0:30</div>
+    <button class="ibtn" id="bMenu" aria-label="Menu">☰</button>
+  </div>
+  <div class="chips" id="gChips"></div>
+  <div id="boardWrap"><svg id="board" viewBox="0 0 600 600" preserveAspectRatio="xMidYMid meet"></svg></div>
+  <div class="bottom">
+    <div class="banner" id="gBanner"></div>
+    <button class="rollbtn" id="bRoll" disabled>🎲 Jogar dado</button>
+  </div>
+</div>
+
+<div class="back" id="modal"><div class="sheet" id="sheet"></div></div>
+<div id="toast"></div>
+<div id="diceLayer"></div>
+<div id="bigPop"><div class="bp" id="bigBox"></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getDatabase, ref, set, get, update, onValue, runTransaction, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+/* ================= CONFIG (mesmo Firebase do Conquista Mundial) ================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyDuYXPb-vzdvZLnHeX1-E2ex7SiBTWYprE",
+  authDomain: "battle-world-ce05d.firebaseapp.com",
+  databaseURL: "https://battle-world-ce05d-default-rtdb.firebaseio.com",
+  projectId: "battle-world-ce05d",
+  storageBucket: "battle-world-ce05d.firebasestorage.app",
+  messagingSenderId: "665723143522",
+  appId: "1:665723143522:web:4f38528322851e9889d83b"
+};
+const ROOT = "ludo";              // tudo do Ludo fica separado do War, na pasta "ludo"
+const ACT_MS = 30000;             // tempo para cada ação (jogar o dado / escolher a peça)
+const FRIENDS = ["Augusto", "Miguel", "Larissa", "Jardelson"];
+
+/* ================= TABULEIRO ================= */
+// 0 vermelho, 1 verde, 2 amarelo, 3 azul (sentido horário)
+const LC = [
+  {n:"Vermelho", f:"#E53935", d:"#9B1C1C", l:"#FFCDD2"},
+  {n:"Verde",    f:"#43A047", d:"#1B5E20", l:"#C8E6C9"},
+  {n:"Amarelo",  f:"#FDD835", d:"#8D6E00", l:"#FFF9C4"},
+  {n:"Azul",     f:"#1E88E5", d:"#0D47A1", l:"#BBDEFB"}
+];
+// as 52 casas do caminho, em [coluna, linha] da grade 15x15
+const TRACK = [[1,6],[2,6],[3,6],[4,6],[5,6],[6,5],[6,4],[6,3],[6,2],[6,1],[6,0],[7,0],[8,0],[8,1],[8,2],[8,3],[8,4],[8,5],[9,6],[10,6],[11,6],[12,6],[13,6],[14,6],[14,7],[14,8],[13,8],[12,8],[11,8],[10,8],[9,8],[8,9],[8,10],[8,11],[8,12],[8,13],[8,14],[7,14],[6,14],[6,13],[6,12],[6,11],[6,10],[6,9],[5,8],[4,8],[3,8],[2,8],[1,8],[0,8],[0,7],[0,6]];
+const START = [0, 13, 26, 39];                       // casa de saída de cada cor
+const SAFE = new Set([0, 8, 13, 21, 26, 34, 39, 47]); // saídas + estrelas
+const HOMECOL = [
+  [[1,7],[2,7],[3,7],[4,7],[5,7]],
+  [[7,1],[7,2],[7,3],[7,4],[7,5]],
+  [[13,7],[12,7],[11,7],[10,7],[9,7]],
+  [[7,13],[7,12],[7,11],[7,10],[7,9]]
+];
+const BASESLOT = [
+  [[2,2],[4,2],[2,4],[4,4]], [[11,2],[13,2],[11,4],[13,4]],
+  [[11,11],[13,11],[11,13],[13,13]], [[2,11],[4,11],[2,13],[4,13]]
+];
+const BASECENTER = [[3,3],[12,3],[12,12],[3,12]];
+const FINISH = [[6.75,7.5],[7.5,6.75],[8.25,7.5],[7.5,8.25]];
+const CELL = 40;
+// posição de uma peça: -1 = na base, 0..50 = no caminho, 51..55 = reta final, 56 = chegou
+function tokenCell(col, pos, i) {
+  if (pos === -1) return BASESLOT[col][i];
+  if (pos >= 56) return FINISH[col];
+  if (pos >= 51) { const c = HOMECOL[col][pos - 51]; return [c[0] + .5, c[1] + .5]; }
+  const c = TRACK[(START[col] + pos) % 52]; return [c[0] + .5, c[1] + .5];
+}
+
+/* ================= FIREBASE ================= */
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+let uid = null, offset = 0, roomCode = null, R = null, unsubRoom = null, unsubConn = null;
+const now = () => Date.now() + offset;
+onValue(ref(db, ".info/serverTimeOffset"), s => offset = s.val() || 0);
+
+/* ================= UTIL ================= */
+const $ = id => document.getElementById(id);
+const arr = x => x ? (Array.isArray(x) ? x.filter(v => v !== null && v !== undefined) : Object.values(x)) : [];
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let toastT = null;
+function toast(msg, ms = 2600) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), ms); }
+function show(id) { ["home","lobby","game"].forEach(s => $(s).classList.toggle("on", s === id)); }
+
+// DADO JUSTO: cada número de 1 a 6 tem exatamente a mesma chance (1/6).
+// Usa o gerador criptográfico do navegador e descarta os valores que deixariam a divisão desigual.
+function fairRoll() {
+  const b = new Uint8Array(1);
+  while (true) { crypto.getRandomValues(b); if (b[0] < 252) return (b[0] % 6) + 1; }   // 252 = 6 x 42
+}
+
+/* ================= NOMES: easter eggs e ranking ================= */
+function canon(txt) {
+  const map = {"1":"i","!":"i","|":"i","l":"i","y":"i","3":"e","€":"e","4":"a","@":"a","0":"o","5":"s","$":"s","z":"s","7":"t","+":"t","9":"g","6":"g","v":"u","w":"u"};
+  let s = (txt || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  s = [...s].map(c => map[c] || c).join("").replace(/[^a-z]/g, "");
+  s = s.replace(/(.)\1+/g, "$1").replace(/th/g, "t").replace(/gu/g, "g").replace(/h/g, "");
+  return s;
+}
+const rev = t => [...(t || "")].reverse().join("");
+const isMiguel = n => canon(n).includes("migei") || canon(rev(n)).includes("migei");
+const isThomas = n => canon(n).includes("tomas") || canon(rev(n)).includes("tomas");
+const funName = n => isMiguel(n) && !n.includes("🦆") ? n + " 🦆😭" : n;
+const THOMAS_MSG = "🎖️ Esse nome já está reservado para um futuro general!";
+function lev(a, b) {
+  const m = a.length, n = b.length; const d = Array.from({length: m + 1}, (_, i) => [i, ...Array(n).fill(0)]);
+  for (let j = 1; j <= n; j++) d[0][j] = j;
+  for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) d[i][j] = Math.min(d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+  return d[m][n];
+}
+// Nome do ranking: qualquer variação (erro de digitação, apelido parecido, número no lugar de letra) vai para o amigo certo
+function rankName(typed) {
+  const clean = (typed || "").replace(/🦆|😭/g, "").trim();
+  const c = canon(clean); if (!c) return clean || "Sem nome";
+  let best = null, bestScore = 9;
+  FRIENDS.forEach(f => {
+    const fc = canon(f);
+    let score;
+    if (c === fc || c.includes(fc) || (c.length >= 3 && fc.startsWith(c)) || (c.length >= 4 && fc.includes(c))) score = 0;
+    else {
+      const dFull = lev(c, fc), okFull = dFull <= Math.max(1, Math.floor(fc.length * .45));
+      const dPre = c.length >= 5 ? lev(c, fc.slice(0, c.length)) : 99, okPre = dPre <= 1;   // começo do nome com 1 erro (ex.: "Jardek")
+      score = okFull ? dFull / fc.length : (okPre ? dPre / c.length : 9);
+    }
+    if (score < bestScore) { bestScore = score; best = f; }
+  });
+  return best || (clean.charAt(0).toUpperCase() + clean.slice(1));
+}
+const rankKey = n => n.replace(/[.#$\[\]\/]/g, "_");
+
+/* ================= REGRAS ================= */
+function norm(g) {
+  g.order = arr(g.order); g.log = arr(g.log); g.fin = arr(g.fin); g.moves = arr(g.moves);
+  g.order.forEach(u => g.tok[u] = arr(g.tok[u]));
+  g.team = g.team || {};
+  return g;
+}
+const cur = g => g.order[g.turn];
+const allHome = (g, u) => g.tok[u].every(p => p === 56);
+const partnerOf = (g, u) => g.mode === "duo" ? g.order.find(x => x !== u && g.team[x] === g.team[u]) : null;
+const allies = (g, a, b) => a === b || (g.mode === "duo" && g.team[a] === g.team[b]);
+const teamDone = (g, t) => g.order.filter(u => g.team[u] === t).every(u => allHome(g, u));
+const isOut = (g, u) => g.mode === "duo" ? teamDone(g, g.team[u]) : g.fin.includes(u);
+const absOf = (g, u, p) => (START[g.col[u]] + p) % 52;
+const nm = (g, u) => g.names[u];
+function logp(g, s) { g.log.push(s); if (g.log.length > 40) g.log = g.log.slice(-40); }
+// no modo dupla, quem já levou as 4 peças pra casa passa a jogar pelas peças do parceiro
+function moverOf(g, u) { if (g.mode === "duo" && allHome(g, u)) { const p = partnerOf(g, u); if (p && !allHome(g, p)) return p; } return u; }
+function legal(g, m, v) { return [0,1,2,3].filter(i => { const p = g.tok[m][i]; return (p === -1 && v === 6) || (p >= 0 && p < 56 && p + v <= 56); }); }
+function newTimer(g) { g.deadline = now() + ACT_MS; }
+function nextTurn(g) {
+  g.sixes = 0; g.moves = []; g.phase = "roll";
+  let i = g.turn, guard = 0;
+  do { i = (i + 1) % g.order.length; guard++; } while (isOut(g, g.order[i]) && guard < 10);
+  g.turn = i; g.turnNo = (g.turnNo || 0) + 1; newTimer(g);
+}
+function checkEnd(g) {
+  if (g.mode === "duo") {
+    [0, 1].forEach(t => { if (!g.ended && teamDone(g, t)) { g.ended = true; g.winTeam = t; } });
+  } else {
+    const left = g.order.filter(u => !g.fin.includes(u));
+    if (left.length <= 1) { if (left.length) g.fin.push(left[0]); g.ended = true; }
+  }
+  if (g.ended) {
+    g.phase = "end"; g.rankPending = true; g.endTs = now();
+    if (g.mode === "duo") logp(g, `🏆 Dupla ${g.winTeam === 0 ? "A" : "B"} (${g.order.filter(u => g.team[u] === g.winTeam).map(u => nm(g, u)).join(" e ")}) venceu!`);
+    else logp(g, "🏆 Fim de jogo! " + g.fin.map((u, i) => `${i + 1}º ${nm(g, u)}`).join(" · "));
+  }
+}
+function doMove(g, u, m, i, v) {
+  const from = g.tok[m][i]; const to = from === -1 ? 0 : from + v;
+  g.tok[m][i] = to;
+  let caps = 0;
+  if (to <= 50) {
+    const a = absOf(g, m, to);
+    if (!SAFE.has(a)) g.order.forEach(p => {
+      if (allies(g, p, m)) return;
+      g.tok[p].forEach((q, j) => { if (q >= 0 && q <= 50 && absOf(g, p, q) === a) { g.tok[p][j] = -1; caps++; logp(g, `💥 ${nm(g, m)} capturou uma peça de ${nm(g, p)}!`); } });
+    });
+  }
+  g.last = {u, m, i, from, to, caps, ts: now()};
+  if (to === 56) logp(g, `🏠 ${nm(g, m)} levou uma peça para casa`);
+  if (allHome(g, m) && !g.fin.includes(m)) { g.fin.push(m); logp(g, `🏁 ${nm(g, m)} levou as 4 peças para casa!${g.mode !== "duo" ? ` (${g.fin.length}º lugar)` : ""}`); }
+  checkEnd(g); if (g.ended) return;
+  if (g.mode !== "duo" && g.fin.includes(u)) { nextTurn(g); return; }
+  // tirou 6, capturou ou chegou em casa: joga de novo
+  if (v === 6 || caps > 0 || to === 56) { g.phase = "roll"; g.moves = []; newTimer(g); } else nextTurn(g);
+}
+function doRoll(g, u) {
+  const v = fairRoll(); const m = moverOf(g, u);
+  g.dice = {v, ts: now(), by: u, m};
+  g.sixes = v === 6 ? (g.sixes || 0) + 1 : 0;
+  if (g.sixes >= 3) { logp(g, `🎲 ${nm(g, u)} tirou três 6 seguidos e perdeu a vez`); nextTurn(g); return; }
+  const mv = legal(g, m, v);
+  if (!mv.length) { logp(g, `🎲 ${nm(g, u)} tirou ${v}: sem jogada possível`); if (v === 6) { g.phase = "roll"; newTimer(g); } else nextTurn(g); return; }
+  const same = mv.every(i => g.tok[m][i] === g.tok[m][mv[0]]);
+  if (mv.length === 1 || same) { doMove(g, u, m, mv[0], v); return; }
+  g.phase = "move"; g.moves = mv; newTimer(g);
+}
+// jogada automática quando o tempo acaba: captura > chegar em casa > sair da base > peça mais adiantada
+function autoPick(g, m, v, mv) {
+  let best = mv[0], bs = -1;
+  mv.forEach(i => {
+    const p = g.tok[m][i], to = p === -1 ? 0 : p + v; let sc = p;
+    if (to <= 50) { const a = absOf(g, m, to); if (!SAFE.has(a) && g.order.some(q => !allies(g, q, m) && g.tok[q].some(x => x >= 0 && x <= 50 && absOf(g, q, x) === a))) sc += 1000; if (SAFE.has(a)) sc += 20; }
+    if (to === 56) sc += 500; if (p === -1) sc += 300;
+    if (sc > bs) { bs = sc; best = i; }
+  });
+  return best;
+}
+
+/* ================= AÇÕES (transações) ================= */
+async function act(fn) {
+  let err = null;
+  try {
+    await runTransaction(ref(db, `${ROOT}/rooms/${roomCode}/game`), g => {
+      if (!g) return g;
+      norm(g); err = null;
+      const fail = m => { err = m; return false; };
+      if (fn(g, fail) === false) return;
+      return g;
+    });
+  } catch (e) { err = "Erro de conexão: " + e.message; }
+  if (err) toast(err);
+  return !err;
+}
+function aRoll() {
+  return act((g, fail) => {
+    if (g.ended) return fail("A partida acabou.");
+    if (cur(g) !== uid) return fail("Não é a sua vez.");
+    if (g.phase !== "roll") return fail("Escolha uma peça para mover.");
+    doRoll(g, uid);
+  });
+}
+function aMove(i) {
+  return act((g, fail) => {
+    if (g.ended) return fail("A partida acabou.");
+    if (cur(g) !== uid || g.phase !== "move") return fail("Não é hora de mover.");
+    if (!g.moves.includes(i)) return fail("Essa peça não pode andar.");
+    doMove(g, uid, g.dice.m, i, g.dice.v);
+  });
+}
+let lastTimeoutTry = 0;
+function checkTimeout() {
+  const g = R && R.game; if (!g || g.ended) return;
+  if (now() < g.deadline + 1500 || Date.now() - lastTimeoutTry < 3000) return;
+  lastTimeoutTry = Date.now(); const dl = g.deadline;
+  act(g2 => {
+    if (g2.ended || g2.deadline !== dl || now() < g2.deadline + 1000) return false;
+    const u = cur(g2);
+    logp(g2, `⏱ Tempo esgotado: jogada automática para ${nm(g2, u)}`);
+    if (g2.phase === "roll") doRoll(g2, u);
+    if (!g2.ended && g2.phase === "move" && cur(g2) === u) doMove(g2, u, g2.dice.m, autoPick(g2, g2.dice.m, g2.dice.v, g2.moves), g2.dice.v);
+  });
+}
+
+/* ================= RANKING ================= */
+// só UM celular grava o resultado no ranking (quem conseguir "pegar" a marcação primeiro), então nunca conta duas vezes
+let rankClaimFor = null;
+async function claimAndSaveRanking(g) {
+  if (rankClaimFor === g.endTs) return; rankClaimFor = g.endTs;
+  let res;
+  try { res = await runTransaction(ref(db, `${ROOT}/rooms/${roomCode}/game/rankPending`), v => (v === true ? false : undefined)); }
+  catch (e) { rankClaimFor = null; return; }
+  if (!res || !res.committed) return;
+  for (const u of g.order) {
+    const rn = rankName(g.names[u]);
+    await runTransaction(ref(db, `${ROOT}/ranking/${rankKey(rn)}`), e => {
+      e = e || {n: rn, p1:0, p2:0, p3:0, p4:0, dw:0, dl:0, games:0};
+      e.n = rn; e.games = (e.games || 0) + 1;
+      if (g.mode === "duo") { if (g.team[u] === g.winTeam) e.dw = (e.dw || 0) + 1; else e.dl = (e.dl || 0) + 1; }
+      else { const k = "p" + (g.fin.indexOf(u) + 1); e[k] = (e[k] || 0) + 1; }
+      return e;
+    });
+  }
+}
+async function openRanking() {
+  let rows = [];
+  try { const s = await get(ref(db, `${ROOT}/ranking`)); rows = Object.values(s.val() || {}); } catch (e) { return toast("Não foi possível abrir o ranking: confira as regras do Firebase."); }
+  FRIENDS.forEach(f => { if (!rows.some(r => r.n === f)) rows.push({n: f, p1:0, p2:0, p3:0, p4:0, dw:0, dl:0, games:0}); });
+  rows.sort((a, b) => (b.p1 - a.p1) || ((b.dw || 0) - (a.dw || 0)) || (b.p2 - a.p2) || (b.p3 - a.p3) || (a.n > b.n ? 1 : -1));
+  openModal(`<h3>🏆 Ranking geral</h3>
+    <div class="lbl">Todas as partidas de todo mundo. Nomes com erro de digitação ou parecidos contam para o amigo certo (ex.: "Lrissa" conta para Larissa).</div>
+    <table class="rk"><tr><th>Nome</th><th>🥇</th><th>🥈</th><th>🥉</th><th>4º</th><th>Duplas<br>V / D</th><th>Jogos</th></tr>
+    ${rows.map((r, i) => `<tr class="${i === 0 && (r.p1 || r.dw) ? "top1" : ""}"><td><b>${i + 1}.</b> ${esc(funName(r.n))}</td><td>${r.p1 || 0}</td><td>${r.p2 || 0}</td><td>${r.p3 || 0}</td><td>${r.p4 || 0}</td><td>${r.dw || 0} / ${r.dl || 0}</td><td>${r.games || 0}</td></tr>`).join("")}</table>
+    <button class="btn" id="rkClose">Fechar</button>`, "rank");
+  $("rkClose").onclick = closeModal;
+}
+
+/* ================= SALAS ================= */
+const savedName = () => ($("name").value.trim() || localStorage.getItem("ld_name") || "").slice(0, 14);
+function genCode() { const L = "ABCDEFGHJKLMNPQRSTUVWXYZ"; return Array.from({length: 4}, () => L[Math.floor(Math.random() * L.length)]).join(""); }
+async function createRoom() {
+  const raw = savedName(); if (!raw) return toast("Digite seu nome.");
+  if (isThomas(raw)) return toast(THOMAS_MSG, 4000);
+  localStorage.setItem("ld_name", raw); const name = funName(raw);
+  let code;
+  for (let i = 0; i < 6; i++) { code = genCode(); const s = await get(ref(db, `${ROOT}/rooms/${code}/meta`)); if (!s.exists()) break; }
+  await set(ref(db, `${ROOT}/rooms/${code}`), {meta: {host: uid, status: "lobby", mode: "solo", created: now()}, players: {[uid]: {name, joined: now(), online: true, team: 0}}});
+  enterRoom(code);
+}
+async function joinRoom(code) {
+  code = (code || "").trim().toUpperCase();
+  if (code.length !== 4) return toast("O código tem 4 letras.");
+  const raw = savedName(); if (!raw) return toast("Digite seu nome.");
+  if (isThomas(raw)) return toast(THOMAS_MSG, 4000);
+  localStorage.setItem("ld_name", raw); const name = funName(raw);
+  const s = await get(ref(db, `${ROOT}/rooms/${code}`));
+  if (!s.exists()) return toast("Sala não encontrada.");
+  const room = s.val(); const players = room.players || {};
+  if (players[uid]) return enterRoom(code);
+  if (room.meta.status !== "lobby") return toast("Essa partida já começou.");
+  let ok = false, why = "";
+  await runTransaction(ref(db, `${ROOT}/rooms/${code}/players`), ps => {
+    ps = ps || {};
+    if (ps[uid]) { ok = true; return ps; }
+    const list = Object.values(ps);
+    if (list.length >= 4) { why = "Sala cheia (máximo 4)."; return; }
+    const cA = list.filter(p => p.team === 0).length, cB = list.length - cA;
+    ps[uid] = {name, joined: now(), online: true, team: cA <= cB ? 0 : 1}; ok = true; return ps;
+  });
+  if (!ok) return toast(why || "Não foi possível entrar.");
+  enterRoom(code);
+}
+function enterRoom(code) {
+  leaveListeners();
+  roomCode = code; localStorage.setItem("ld_room", code);
+  history.replaceState(null, "", location.pathname + "?sala=" + code);
+  const onRef = ref(db, `${ROOT}/rooms/${code}/players/${uid}/online`);
+  unsubConn = onValue(ref(db, ".info/connected"), s => { if (s.val() === true) onDisconnect(onRef).set(false).then(() => set(onRef, true)); });
+  firstSnap = true; shownTok = null;
+  unsubRoom = onValue(ref(db, `${ROOT}/rooms/${code}`), s => {
+    R = s.val();
+    if (!R || !R.players || !R.players[uid]) { toast("Você não está nesta sala."); leaveRoom(); return; }
+    if (R.game) norm(R.game);
+    render();
+  });
+}
+function leaveListeners() { if (unsubRoom) unsubRoom(); if (unsubConn) unsubConn(); unsubRoom = unsubConn = null; }
+async function leaveRoom() {
+  const code = roomCode;
+  if (code && R && R.meta && R.meta.status === "lobby" && R.players && R.players[uid]) {
+    const others = Object.keys(R.players).filter(u => u !== uid);
+    if (!others.length) await set(ref(db, `${ROOT}/rooms/${code}`), null);
+    else { const upd = {[`players/${uid}`]: null}; if (R.meta.host === uid) upd["meta/host"] = others[0]; await update(ref(db, `${ROOT}/rooms/${code}`), upd); }
+  } else if (code) set(ref(db, `${ROOT}/rooms/${code}/players/${uid}/online`), false);
+  leaveListeners(); roomCode = null; R = null; localStorage.removeItem("ld_room");
+  history.replaceState(null, "", location.pathname);
+  closeModal(); show("home");
+}
+function buildGame(ps, mode) {
+  const uids = Object.keys(ps).sort((a, b) => ps[a].joined - ps[b].joined);
+  const g = {mode, order: [], col: {}, names: {}, team: {}, tok: {}, fin: [], log: [], moves: [], turn: 0, turnNo: 1, phase: "roll", sixes: 0, ended: false};
+  if (mode === "duo") {
+    const A = uids.filter(u => ps[u].team === 0), B = uids.filter(u => ps[u].team === 1);
+    // dupla A: vermelho e amarelo · dupla B: verde e azul (parceiros em lados opostos)
+    g.col[A[0]] = 0; g.col[A[1]] = 2; g.col[B[0]] = 1; g.col[B[1]] = 3;
+    A.forEach(u => g.team[u] = 0); B.forEach(u => g.team[u] = 1);
+  } else {
+    const cols = uids.length === 2 ? [0, 2] : uids.length === 3 ? [0, 1, 2] : [0, 1, 2, 3];
+    shuffle(uids).forEach((u, i) => g.col[u] = cols[i]);
+  }
+  g.order = uids.slice().sort((a, b) => g.col[a] - g.col[b]);
+  uids.forEach(u => { g.names[u] = ps[u].name; g.tok[u] = [-1, -1, -1, -1]; });
+  g.turn = Math.floor(Math.random() * g.order.length);
+  logp(g, "🎲 A partida começou! " + g.order.map(u => `${g.names[u]} (${LC[g.col[u]].n})`).join(", "));
+  if (mode === "duo") logp(g, `👥 Dupla A: ${A_names(g, 0)} · Dupla B: ${A_names(g, 1)}`);
+  logp(g, `▶ Quem começa: ${g.names[g.order[g.turn]]} (sorteio)`);
+  newTimer(g);
+  return g;
+}
+const A_names = (g, t) => g.order.filter(u => g.team[u] === t).map(u => g.names[u]).join(" e ");
+let starting = false;
+async function startGame() {
+  const ps = R.players; const uids = Object.keys(ps); const duo = R.meta.mode === "duo";
+  if (uids.length < 2) return toast("Precisa de pelo menos 2 jogadores.");
+  if (duo && (uids.length !== 4 || uids.filter(u => ps[u].team === 0).length !== 2)) return toast("No modo dupla precisa de 4 jogadores, 2 em cada dupla.");
+  if (R.game || starting) return; starting = true; setTimeout(() => starting = false, 4000);
+  await update(ref(db, `${ROOT}/rooms/${roomCode}`), {"meta/status": "playing", game: buildGame(ps, duo ? "duo" : "solo")});
+}
+
+/* ================= DESENHO DO TABULEIRO ================= */
+const svg = d3.select("#board");
+const boardG = svg.append("g"), tokG = svg.append("g");
+function drawBoard() {
+  const c = CELL;
+  boardG.append("rect").attr("width", 600).attr("height", 600).attr("rx", 14).attr("fill", "#ffffff");
+  // casas do caminho
+  TRACK.forEach(([x, y], i) => {
+    const startCol = START.indexOf(i);
+    boardG.append("rect").attr("x", x * c).attr("y", y * c).attr("width", c).attr("height", c)
+      .attr("fill", startCol >= 0 ? LC[startCol].f : "#ffffff").attr("stroke", "#9ca3af").attr("stroke-width", 1);
+    if (SAFE.has(i) && startCol < 0) boardG.append("text").attr("x", x * c + c / 2).attr("y", y * c + c / 2 + 1).attr("text-anchor", "middle").attr("dominant-baseline", "central").attr("font-size", 24).attr("fill", "#9ca3af").text("★");
+    if (startCol >= 0) boardG.append("text").attr("x", x * c + c / 2).attr("y", y * c + c / 2 + 1).attr("text-anchor", "middle").attr("dominant-baseline", "central").attr("font-size", 22).attr("fill", "rgba(255,255,255,.85)").text("★");
+  });
+  // retas finais
+  HOMECOL.forEach((cells, col) => cells.forEach(([x, y]) => boardG.append("rect").attr("x", x * c).attr("y", y * c).attr("width", c).attr("height", c).attr("fill", LC[col].f).attr("stroke", "#9ca3af").attr("stroke-width", 1)));
+  // bases
+  [[0, 0], [9, 0], [9, 9], [0, 9]].forEach(([bx, by], col) => {
+    boardG.append("rect").attr("x", bx * c).attr("y", by * c).attr("width", 6 * c).attr("height", 6 * c).attr("fill", LC[col].f).attr("stroke", "#6b7280").attr("stroke-width", 1.5);
+    boardG.append("rect").attr("x", (bx + 1) * c).attr("y", (by + 1) * c).attr("width", 4 * c).attr("height", 4 * c).attr("rx", 18).attr("fill", "#ffffff");
+    BASESLOT[col].forEach(([sx, sy]) => boardG.append("circle").attr("cx", sx * c).attr("cy", sy * c).attr("r", 17).attr("fill", LC[col].l).attr("stroke", LC[col].f).attr("stroke-width", 3));
+  });
+  // centro (chegada)
+  const m = 6 * c, M = 9 * c, mid = 7.5 * c;
+  [[[m, m], [m, M]], [[m, m], [M, m]], [[M, m], [M, M]], [[m, M], [M, M]]].forEach((e, col) => {
+    boardG.append("path").attr("d", `M${e[0][0]},${e[0][1]} L${e[1][0]},${e[1][1]} L${mid},${mid} Z`).attr("fill", LC[col].f).attr("stroke", "#6b7280").attr("stroke-width", 1);
+  });
+  boardG.append("rect").attr("width", 600).attr("height", 600).attr("rx", 14).attr("fill", "none").attr("stroke", "#374151").attr("stroke-width", 4);
+}
+drawBoard();
+
+/* ================= PEÇAS (desenho e animação) ================= */
+let shownTok = null, animQ = Promise.resolve(), busy = 0;
+const enqueue = fn => { busy++; animQ = animQ.then(fn).catch(() => {}).then(() => { busy--; updateUI(); }); return animQ; };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function layout(tok) {
+  // calcula onde cada peça fica; peças na mesma casa ficam lado a lado
+  const g = R.game, groups = {};
+  g.order.forEach(u => tok[u].forEach((p, i) => {
+    const [x, y] = tokenCell(g.col[u], p, i);
+    const key = p === -1 ? `b${u}${i}` : (p >= 56 ? `f${g.col[u]}` : `${x},${y}`);
+    (groups[key] = groups[key] || []).push({u, i, x, y});
+  }));
+  const pos = {};
+  const OFF = {1:[[0,0]], 2:[[-.2,0],[.2,0]], 3:[[-.2,-.17],[.2,-.17],[0,.2]], 4:[[-.2,-.2],[.2,-.2],[-.2,.2],[.2,.2]]};
+  Object.values(groups).forEach(list => {
+    const n = Math.min(list.length, 4), offs = OFF[n] || OFF[4];
+    list.forEach((t, k) => { const o = offs[k % offs.length]; pos[t.u + ":" + t.i] = {x: (t.x + o[0]) * CELL, y: (t.y + o[1]) * CELL, s: list.length > 1 ? .78 : 1}; });
+  });
+  return pos;
+}
+function ensureTokens() {
+  const g = R.game;
+  const data = []; g.order.forEach(u => [0,1,2,3].forEach(i => data.push({u, i, k: u + ":" + i})));
+  const sel = tokG.selectAll("g.tk").data(data, d => d.k);
+  sel.exit().remove();
+  const en = sel.enter().append("g").attr("class", "tk");
+  en.append("circle").attr("class", "ring").attr("r", 20).attr("fill", "none").attr("stroke", "#111827").attr("stroke-width", 3).attr("stroke-dasharray", "5 4");
+  en.append("circle").attr("class", "body").attr("r", 14).attr("stroke", "#1f2937").attr("stroke-width", 2.5);
+  en.append("circle").attr("class", "shine").attr("r", 5.5).attr("cx", -3.5).attr("cy", -4).attr("fill", "rgba(255,255,255,.55)");
+  en.on("click", (e, d) => onToken(d.u, d.i));
+  tokG.selectAll("g.tk").select(".body").attr("fill", d => LC[g.col[d.u]].f);
+}
+function placeAll(tok) {
+  ensureTokens();
+  const pos = layout(tok);
+  tokG.selectAll("g.tk").interrupt().attr("transform", d => { const p = pos[d.k]; return `translate(${p.x},${p.y}) scale(${p.s})`; });
+}
+async function animateTokens(from, to) {
+  const g = R.game; ensureTokens();
+  const moved = [], captured = [];
+  g.order.forEach(u => [0,1,2,3].forEach(i => {
+    const a = from[u] ? from[u][i] : -1, b = to[u][i];
+    if (a === b) return;
+    if (b === -1) captured.push({u, i}); else moved.push({u, i, a, b});
+  }));
+  for (const mv of moved) {
+    const el = tokG.selectAll("g.tk").filter(d => d.u === mv.u && d.i === mv.i); el.raise();
+    const steps = []; if (mv.a === -1) steps.push(0); else for (let p = mv.a + 1; p <= mv.b; p++) steps.push(p);
+    for (const p of steps) {
+      const [x, y] = tokenCell(g.col[mv.u], p, mv.i);
+      await el.transition().duration(150).ease(d3.easeQuadOut).attr("transform", `translate(${x * CELL},${y * CELL}) scale(1.15)`).end().catch(() => {});
+    }
+  }
+  if (captured.length) {
+    await sleep(150);
+    await Promise.all(captured.map(c => {
+      const el = tokG.selectAll("g.tk").filter(d => d.u === c.u && d.i === c.i); el.raise();
+      const [x, y] = tokenCell(g.col[c.u], -1, c.i);
+      return el.transition().duration(650).ease(d3.easeBackIn).attr("transform", `translate(${x * CELL},${y * CELL}) scale(1)`).end().catch(() => {});
+    }));
+    try { navigator.vibrate && navigator.vibrate([60, 40, 60]); } catch (e) {}
+  }
+  placeAll(to);
+}
+function highlight() {
+  const g = R && R.game; if (!g) return;
+  const can = !busy && !g.ended && cur(g) === uid && g.phase === "move";
+  const movable = new Set(can ? g.moves.map(i => g.dice.m + ":" + i) : []);
+  tokG.selectAll("g.tk").select(".ring").classed("on", d => movable.has(d.k)).attr("stroke", d => LC[g.col[d.u]].d);
+  tokG.selectAll("g.tk").filter(d => movable.has(d.k)).raise();
+}
+function onToken(u, i) {
+  const g = R && R.game; if (!g || busy) return;
+  if (cur(g) !== uid || g.phase !== "move") return;
+  if (u !== g.dice.m || !g.moves.includes(i)) return toast("Essa peça não pode andar com esse dado.");
+  aMove(i);
+}
+
+/* ================= DADO 3D (igual ao do War) ================= */
+const PIPS = {1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+const FACE_ROT = {1:[0,0], 6:[0,180], 3:[0,-90], 4:[0,90], 5:[-90,0], 2:[90,0]};
+const faceHTML = n => `<div class="face f${n}">${Array.from({length: 9}, (_, i) => `<i class="${PIPS[n].includes(i) ? "v" : ""}"></i>`).join("")}</div>`;
+function boardScreen(cx, cy) {
+  const pt = svg.node().createSVGPoint(); pt.x = cx * CELL; pt.y = cy * CELL;
+  const q = pt.matrixTransform(svg.node().getScreenCTM()); return [q.x, q.y];
+}
+function throwDie(v, col) {
+  const L = $("diceLayer"); L.innerHTML = "";
+  const w = document.createElement("div"); w.className = "dw";
+  w.innerHTML = `<div class="dshadow"></div><div class="cube">${[1,2,3,4,5,6].map(faceHTML).join("")}</div><div class="dnum">${v}</div>`;
+  L.appendChild(w);
+  const cube = w.querySelector(".cube");
+  // o dado cai na base de quem jogou
+  let [x, y] = boardScreen(BASECENTER[col][0], BASECENTER[col][1]); x -= 27; y -= 27;
+  const fromLeft = col === 0 || col === 3;
+  const x0 = fromLeft ? -70 : innerWidth + 20, y0 = innerHeight * .8;
+  const mx = (x0 + x) / 2, my = Math.min(y0, y) - 160;
+  const [rx, ry] = FACE_ROT[v];
+  const sx = rx + 360 * (2 + Math.floor(Math.random() * 2)), sy = ry + 360 * (2 + Math.floor(Math.random() * 2));
+  const rz0 = (Math.random() * 300 + 200) * (fromLeft ? 1 : -1);
+  const T = 1150;
+  const path = w.animate([
+    {transform: `translate(${x0}px,${y0}px) scale(.7)`},
+    {transform: `translate(${mx}px,${my}px) scale(1.3)`, offset: .42},
+    {transform: `translate(${x}px,${y}px) scale(1)`, offset: .7},
+    {transform: `translate(${x + (fromLeft ? 8 : -8)}px,${y - 22}px) scale(1.06)`, offset: .83},
+    {transform: `translate(${x}px,${y}px) scale(1)`}
+  ], {duration: T, easing: "cubic-bezier(.25,.6,.35,1)", fill: "forwards"});
+  cube.animate([
+    {transform: `rotateX(${sx}deg) rotateY(${sy}deg) rotateZ(${rz0}deg)`},
+    {transform: `rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(0deg)`}
+  ], {duration: T, easing: "cubic-bezier(.15,.6,.25,1)", fill: "forwards"});
+  return path.finished.then(() => {
+    const z = w.animate([
+      {transform: `translate(${x}px,${y}px) scale(1)`},
+      {transform: `translate(${x}px,${y}px) scale(1.9)`, offset: .35},
+      {transform: `translate(${x}px,${y}px) scale(1.4)`}
+    ], {duration: 650, easing: "ease-out", fill: "forwards"});
+    w.querySelector(".dnum").classList.add("on");
+    try { navigator.vibrate && navigator.vibrate(25); } catch (e) {}
+    return z.finished;
+  });
+}
+
+/* ================= MODAIS E TELAS ================= */
+let modalKind = null;
+function openModal(html, kind) { $("sheet").innerHTML = html; $("modal").classList.add("on"); modalKind = kind || "x"; }
+function closeModal() { $("modal").classList.remove("on"); modalKind = null; }
+$("modal").addEventListener("click", e => { if (e.target.id === "modal") closeModal(); });
+let bigT = null;
+function showBig(html, ms) { $("bigBox").innerHTML = html; $("bigPop").classList.add("on"); const b = $("bigOk"); if (b) b.onclick = closeBig; clearTimeout(bigT); if (ms) bigT = setTimeout(closeBig, ms); }
+function closeBig() { clearTimeout(bigT); $("bigPop").classList.remove("on"); }
+$("bigPop").addEventListener("click", e => { if (e.target.id === "bigPop") closeBig(); });
+function showTurnPop(g) {
+  const m = moverOf(g, uid);
+  showBig(`<div class="bp-title">SUA VEZ</div><div class="bp-sub">Toque em 🎲 Jogar dado</div>
+    ${m !== uid ? `<div class="bp-small">Suas peças já chegaram! Agora você joga pelas peças de <b style="color:${LC[g.col[m]].f}">${esc(nm(g, m))}</b>.</div>` : `<div class="bp-small">Você é o <b style="color:${LC[g.col[uid]].f}">${LC[g.col[uid]].n.toUpperCase()}</b></div>`}`, 1600);
+  try { navigator.vibrate && navigator.vibrate([150, 80, 150]); } catch (e) {}
+}
+function showEnd(g) {
+  let body;
+  if (g.mode === "duo") {
+    const W = g.order.filter(u => g.team[u] === g.winTeam), Lz = g.order.filter(u => g.team[u] !== g.winTeam);
+    body = `<div class="bp-sub">Dupla ${g.winTeam === 0 ? "A" : "B"} venceu!</div>
+      <div class="list" style="text-align:left">${W.map(u => `<div class="it">🥇 <i class="dot" style="background:${LC[g.col[u]].f}"></i>${esc(nm(g, u))}</div>`).join("")}${Lz.map(u => `<div class="it">🥈 <i class="dot" style="background:${LC[g.col[u]].f}"></i>${esc(nm(g, u))}</div>`).join("")}</div>`;
+  } else {
+    const med = ["🥇", "🥈", "🥉", "4º"];
+    body = `<div class="list" style="text-align:left">${g.fin.map((u, i) => `<div class="it"><b style="width:28px">${med[i]}</b><i class="dot" style="background:${LC[g.col[u]].f}"></i>${esc(nm(g, u))}${u === uid ? " (você)" : ""}</div>`).join("")}</div>`;
+  }
+  showBig(`<div style="font-size:54px">🏆</div><div class="bp-title" style="font-size:38px">FIM DE JOGO</div>${body}
+    <div class="bp-small">O resultado já foi somado no ranking geral.</div>
+    <button class="btn" id="bigRank">🏆 Ver ranking</button>
+    ${R.meta.host === uid ? `<button class="btn pri" id="bigNew">Nova partida</button>` : `<div class="bp-small">O criador da sala pode começar uma nova partida.</div>`}
+    <button class="btn" id="bigOk">Fechar</button>`);
+  $("bigRank").onclick = () => { closeBig(); openRanking(); };
+  if ($("bigNew")) $("bigNew").onclick = async () => { closeBig(); await update(ref(db, `${ROOT}/rooms/${roomCode}`), {"meta/status": "lobby", game: null}); };
+}
+function openMenu() {
+  openModal(`<h3>Menu</h3><div class="lbl">Sala ${roomCode}. Se sair, dá pra voltar depois com o mesmo código.</div>
+    <button class="btn" id="mShare">Copiar convite da sala</button>
+    <button class="btn" id="mRank">🏆 Ranking geral</button>
+    <button class="btn" id="mLog">📜 Registro da partida</button>
+    <button class="btn" id="mHelp">Regras</button>
+    <button class="btn red" id="mLeave">Sair da partida</button>
+    <button class="btn" id="mClose">Fechar</button>`, "menu");
+  $("mShare").onclick = share; $("mRank").onclick = openRanking; $("mLeave").onclick = leaveRoom; $("mClose").onclick = closeModal;
+  $("mLog").onclick = () => { const g = R.game; openModal(`<h3>📜 Registro</h3><div class="list">${(g ? g.log : []).slice().reverse().map(l => `<div class="it" style="font-size:13px">${esc(l)}</div>`).join("")}</div><button class="btn" id="lgClose">Fechar</button>`, "log"); $("lgClose").onclick = closeModal; };
+  $("mHelp").onclick = () => { openModal(`<h3>Regras</h3><div class="list" style="font-size:13px;line-height:1.45">
+    <div class="it">🎲 O dado é justo: cada número de 1 a 6 tem a mesma chance.</div>
+    <div class="it">🚪 Para tirar uma peça da base, precisa tirar 6.</div>
+    <div class="it">🔁 Tirou 6, joga de novo. Três 6 seguidos: perde a vez.</div>
+    <div class="it">💥 Caiu numa casa com peça adversária: ela volta para a base e você joga de novo.</div>
+    <div class="it">★ Casas com estrela (e as de saída) são seguras: ninguém é capturado nelas.</div>
+    <div class="it">🏠 Para entrar em casa precisa do número exato. Chegou uma peça: joga de novo.</div>
+    <div class="it">👥 Duplas: parceiros não se capturam. Quem levar as 4 peças para casa passa a jogar pelas peças do parceiro. A dupla vence quando as 8 peças chegarem.</div>
+    <div class="it">⏱ Cada jogada tem 30 segundos; se acabar, a jogada é feita automaticamente.</div></div>
+    <button class="btn" id="hClose">Fechar</button>`, "help"); $("hClose").onclick = closeModal; };
+}
+async function share() {
+  const link = location.origin + location.pathname + "?sala=" + roomCode;
+  const txt = `Bora jogar Ludo! Sala ${roomCode}: ${link}`;
+  try { if (navigator.share) { await navigator.share({title: "Ludo", text: txt}); return; } } catch (e) {}
+  try { await navigator.clipboard.writeText(txt); toast("Convite copiado!"); } catch (e) { toast(link, 5000); }
+}
+
+/* ================= RENDER ================= */
+let firstSnap = true, lastDiceTs = null, lastTurnNo = null, endShown = null;
+function render() {
+  if (!R) return show("home");
+  if (R.meta.status === "lobby") { shownTok = null; endShown = null; return renderLobby(); }
+  show("game"); renderGame();
+}
+function renderLobby() {
+  show("lobby");
+  $("lCode").textContent = roomCode;
+  const ps = Object.entries(R.players).sort((a, b) => a[1].joined - b[1].joined);
+  const host = R.meta.host === uid, duo = R.meta.mode === "duo";
+  $("lCount").textContent = ps.length;
+  document.querySelectorAll("#lMode button").forEach(b => { const on = (b.dataset.m === "duo") === duo; b.classList.toggle("pri", on); b.disabled = !host && !on; b.onclick = () => host && update(ref(db, `${ROOT}/rooms/${roomCode}/meta`), {mode: b.dataset.m}); });
+  $("lPlayers").innerHTML = ps.map(([u, p]) => `<div class="pitem"><div>${esc(p.name)}${u === R.meta.host ? " 👑" : ""}${u === uid ? ' <span class="lbl">(você)</span>' : ""}</div>
+    ${duo ? `<div style="display:flex;gap:6px;margin-left:auto">${[0, 1].map(t => `<button class="tbtn ${p.team === t ? "sel" : ""}" data-u="${u}" data-t="${t}" ${u === uid || host ? "" : "disabled"}>Dupla ${t ? "B" : "A"}</button>`).join("")}</div>` : ""}
+    <i class="on-dot ${p.online ? "" : "off"}" ${duo ? 'style="margin-left:6px"' : ""}></i></div>`).join("");
+  document.querySelectorAll(".tbtn").forEach(b => b.onclick = () => {
+    const u = b.dataset.u, t = +b.dataset.t;
+    const inTeam = Object.entries(R.players).filter(([x, p]) => x !== u && p.team === t).length;
+    if (inTeam >= 2) return toast(`A Dupla ${t ? "B" : "A"} já tem 2 jogadores.`);
+    update(ref(db, `${ROOT}/rooms/${roomCode}/players/${u}`), {team: t});
+  });
+  $("bShuffle").style.display = duo && host ? "" : "none";
+  const cA = ps.filter(([, p]) => p.team === 0).length;
+  $("bStart").style.display = host ? "" : "none";
+  $("bStart").disabled = duo ? !(ps.length === 4 && cA === 2) : ps.length < 2;
+  $("lWait").textContent = duo
+    ? (ps.length !== 4 ? `Dupla x Dupla precisa de 4 jogadores (faltam ${4 - ps.length}).` : (cA !== 2 ? "Cada dupla precisa ter 2 jogadores: escolham Dupla A ou B." : (host ? "Duplas prontas! A dupla A joga com vermelho e amarelo, a B com verde e azul." : "Aguardando o criador da sala começar…")))
+    : (host ? (ps.length < 2 ? "Mande o código para seus amigos." : "Todos prontos? Comece quando quiser.") : "Aguardando o criador da sala começar…");
+}
+function renderGame() {
+  const g = R.game; if (!g) return;
+  // animações: primeiro o dado, depois as peças andando
+  const tok = {}; g.order.forEach(u => tok[u] = g.tok[u].slice());
+  if (!shownTok || firstSnap) { shownTok = tok; lastDiceTs = g.dice ? g.dice.ts : null; placeAll(tok); }
+  else {
+    if (g.dice && g.dice.ts !== lastDiceTs) { lastDiceTs = g.dice.ts; const d = g.dice, col = g.col[d.by]; enqueue(() => throwDie(d.v, col)); }
+    if (JSON.stringify(tok) !== JSON.stringify(shownTok)) { const from = shownTok; shownTok = tok; enqueue(() => animateTokens(from, tok)); }
+  }
+  // sua vez
+  if (!g.ended && cur(g) === uid && g.turnNo !== lastTurnNo && g.phase === "roll") { const gg = g; enqueue(async () => showTurnPop(gg)); }
+  lastTurnNo = g.turnNo;
+  // fim
+  if (g.ended && endShown !== g.endTs) { endShown = g.endTs; const gg = g; enqueue(async () => { await sleep(500); showEnd(gg); }); }
+  if (g.ended && g.rankPending) claimAndSaveRanking(g);
+  firstSnap = false;
+  updateUI();
+}
+function updateUI() {
+  const g = R && R.game; if (!g || !R.meta || R.meta.status !== "playing") return;
+  $("gTitle").innerHTML = `Sala ${roomCode} <small>· ${g.mode === "duo" ? "Duplas" : "Todos x todos"}</small>`;
+  const med = ["🥇", "🥈", "🥉", "4º"];
+  $("gChips").innerHTML = g.order.map(u => {
+    const home = g.tok[u].filter(p => p === 56).length, on = R.players[u] && R.players[u].online;
+    const place = g.mode !== "duo" && g.fin.includes(u) ? med[g.fin.indexOf(u)] + " " : "";
+    return `<div class="chip ${u === cur(g) && !g.ended ? "cur" : ""} ${isOut(g, u) && !g.ended ? "out" : ""}"><i class="dot" style="background:${LC[g.col[u]].f}"></i>${place}${g.mode === "duo" ? `<b>${g.team[u] ? "B" : "A"}</b> ` : ""}${esc(nm(g, u))}${u === uid ? " (você)" : ""} · 🏠${home}/4${on ? "" : " 📴"}</div>`;
+  }).join("");
+  const mine = !g.ended && cur(g) === uid;
+  let txt;
+  if (g.ended) txt = g.mode === "duo" ? `🏆 <b>Dupla ${g.winTeam ? "B" : "A"}</b> venceu!` : `🏆 <b>${esc(nm(g, g.fin[0]))}</b> venceu!`;
+  else if (busy) txt = g.dice ? `🎲 ${esc(nm(g, g.dice.by))} tirou <b>${g.dice.v}</b>` : "…";
+  else if (mine && g.phase === "roll") txt = moverOf(g, uid) !== uid ? `Sua vez! Você joga pelas peças de <b>${esc(nm(g, moverOf(g, uid)))}</b>.` : "<b>Sua vez!</b> Toque em 🎲 Jogar dado.";
+  else if (mine && g.phase === "move") txt = `Você tirou <b>${g.dice.v}</b>. Toque na peça que vai andar (as que piscam).`;
+  else txt = `Vez de <b style="color:${LC[g.col[cur(g)]].f}">${esc(nm(g, cur(g)))}</b>${g.phase === "move" ? ` · escolhendo a peça (tirou ${g.dice.v})` : ""}`;
+  $("gBanner").innerHTML = txt;
+  $("bRoll").disabled = !(mine && g.phase === "roll" && !busy);
+  $("bRoll").style.display = g.ended ? "none" : "";
+  highlight();
+}
+setInterval(() => {
+  const g = R && R.game; if (!g || !R.meta || R.meta.status !== "playing") return;
+  if (g.ended) { $("gTimer").textContent = "fim"; $("gTimer").classList.remove("low"); return; }
+  const s = Math.max(0, Math.ceil((g.deadline - now()) / 1000));
+  $("gTimer").textContent = `0:${String(Math.min(s, 59)).padStart(2, "0")}`;
+  $("gTimer").classList.toggle("low", s <= 8);
+  checkTimeout();
+}, 250);
+
+/* ================= BOTÕES ================= */
+$("bCreate").onclick = () => uid ? createRoom() : toast("Ainda conectando…");
+$("bJoin").onclick = () => uid ? joinRoom($("codeIn").value) : toast("Ainda conectando…");
+$("codeIn").addEventListener("keydown", e => { if (e.key === "Enter") $("bJoin").click(); });
+$("bRank").onclick = () => uid ? openRanking() : toast("Ainda conectando…");
+$("bShare").onclick = share;
+$("bStart").onclick = startGame;
+$("bLeaveLobby").onclick = leaveRoom;
+$("bMenu").onclick = openMenu;
+$("bShuffle").onclick = async () => {
+  const us = shuffle(Object.keys(R.players)); const upd = {};
+  us.forEach((u, i) => upd[`players/${u}/team`] = i < 2 ? 0 : 1);
+  await update(ref(db, `${ROOT}/rooms/${roomCode}`), upd); toast("Duplas sorteadas!");
+};
+$("bRoll").onclick = async () => { if (busy) return; $("bRoll").disabled = true; await aRoll(); };
+
+/* ================= INÍCIO ================= */
+$("name").value = localStorage.getItem("ld_name") || "";
+const urlCode = new URLSearchParams(location.search).get("sala");
+if (urlCode) $("codeIn").value = urlCode.toUpperCase();
+onAuthStateChanged(auth, async user => {
+  if (!user) { signInAnonymously(auth).catch(e => $("authMsg").textContent = "Erro ao conectar: " + e.message); return; }
+  uid = user.uid; $("authMsg").textContent = "Conectado ✔";
+  const saved = localStorage.getItem("ld_room");
+  const target = (urlCode || saved || "").toUpperCase();
+  if (target) {
+    try {
+      const s = await get(ref(db, `${ROOT}/rooms/${target}/players/${uid}`));
+      if (s.exists()) { enterRoom(target); return; }
+      if (saved === target) localStorage.removeItem("ld_room");
+    } catch (e) { $("authMsg").textContent = "Erro ao acessar o banco: " + e.message + " (confira as regras do Firebase)"; }
+  }
+});
+</script>
+</body>
+</html>
