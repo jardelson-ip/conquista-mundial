@@ -133,6 +133,8 @@ table.rk tr.top1 td{background:#fff6cc}
 .tk.mv .ring{opacity:1;animation:pls .8s infinite}
 .tk.mv .bob{animation:bob .6s ease-in-out infinite}
 @keyframes bob{50%{transform:translateY(-5px)}}
+.kd{font-size:13px;font-weight:800;color:#fff;white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.kd .cr{font-size:15px;margin-left:6px;color:#e2e8f0}
 /* pódio */
 .win-name{font:42px/1.05 "Lilita One",Fredoka,system-ui,sans-serif;letter-spacing:1px;word-break:break-word}
 .pod{display:flex;align-items:flex-end;justify-content:center;gap:8px;margin-top:6px}
@@ -328,6 +330,14 @@ function fairRoll() {
   while (true) { crypto.getRandomValues(b); if (b[0] < 252) return (b[0] % 6) + 1; }   // 252 = 6 x 42
 }
 
+// DADO DE AJUDA: quando o jogador ainda tem peça na base, o 6 tem 2 chances em 6 (33%);
+// o resto (4 em 6) fica dividido igualmente entre 1, 2, 3, 4 e 5 (13,3% cada).
+function helpRoll() {
+  const b = new Uint8Array(1);
+  while (true) { crypto.getRandomValues(b); if (b[0] < 240) { const r = b[0] % 30; return r < 10 ? 6 : 1 + Math.floor((r - 10) / 4); } }   // 240 = 30 x 8
+}
+const rollFor = (g, m) => g.tok[m].includes(-1) ? helpRoll() : fairRoll();
+
 /* ================= NOMES: easter eggs e ranking ================= */
 function canon(txt) {
   const map = {"1":"i","!":"i","|":"i","l":"i","y":"i","3":"e","€":"e","4":"a","@":"a","0":"o","5":"s","$":"s","z":"s","7":"t","+":"t","9":"g","6":"g","v":"u","w":"u"};
@@ -371,7 +381,7 @@ const rankKey = n => n.replace(/[.#$\[\]\/]/g, "_");
 function norm(g) {
   g.order = arr(g.order); g.log = arr(g.log); g.fin = arr(g.fin); g.moves = arr(g.moves);
   g.order.forEach(u => g.tok[u] = arr(g.tok[u]));
-  g.team = g.team || {};
+  g.team = g.team || {}; g.kills = g.kills || {}; g.deaths = g.deaths || {};
   return g;
 }
 const cur = g => g.order[g.turn];
@@ -414,7 +424,7 @@ function doMove(g, u, m, i, v) {
     const a = absOf(g, m, to);
     if (!SAFE.has(a)) g.order.forEach(p => {
       if (allies(g, p, m)) return;
-      g.tok[p].forEach((q, j) => { if (q >= 0 && q <= 50 && absOf(g, p, q) === a) { g.tok[p][j] = -1; caps++; logp(g, `💥 ${nm(g, m)} capturou uma peça de ${nm(g, p)}!`); } });
+      g.tok[p].forEach((q, j) => { if (q >= 0 && q <= 50 && absOf(g, p, q) === a) { g.tok[p][j] = -1; caps++; g.kills[u] = (g.kills[u] || 0) + 1; g.deaths[p] = (g.deaths[p] || 0) + 1; logp(g, `💥 ${nm(g, m)} capturou uma peça de ${nm(g, p)}!`); } });
     });
   }
   g.last = {u, m, i, from, to, caps, ts: now()};
@@ -430,7 +440,7 @@ function doRoll(g, u, forced) {
   // sem nenhuma peça no tabuleiro: joga DOIS dados para ajudar a sair (dois 6 tiram só uma peça)
   const noneOut = g.tok[m].every(p => p === -1 || p === 56) && g.tok[m].includes(-1);
   if (noneOut) {
-    const a = forced || fairRoll(), b = forced || fairRoll();
+    const a = forced || rollFor(g, m), b = forced || rollFor(g, m);
     g.dice = {v: a, v2: b, ts: now(), by: u, m};
     if (a !== 6 && b !== 6) { g.sixes = 0; logp(g, `🎲 ${nm(g, u)} tirou ${a} e ${b}: precisa de um 6 para sair`); nextTurn(g); return; }
     g.sixes = (g.sixes || 0) + 1;
@@ -438,7 +448,7 @@ function doRoll(g, u, forced) {
     logp(g, `🎲 ${nm(g, u)} tirou ${a} e ${b}: uma peça saiu da base`);
     doMove(g, u, m, g.tok[m].indexOf(-1), 6); return;
   }
-  const v = forced || fairRoll();
+  const v = forced || rollFor(g, m);
   g.dice = {v, ts: now(), by: u, m};
   g.sixes = v === 6 ? (g.sixes || 0) + 1 : 0;
   if (g.sixes >= 3) { logp(g, `🎲 ${nm(g, u)} tirou três 6 seguidos e perdeu a vez`); nextTurn(g); return; }
@@ -681,6 +691,13 @@ const SND = {
     });
     lp.connect(out).connect(a.destination); lfo.start(t); lfo.stop(t + 1.65);
   },
+  firework() {  // rojão curtinho: assobio subindo + estouro + estalinhos
+    const a = ac(); if (!a || muted) return; const t = a.currentTime;
+    tone(900, 0, .28, "sine", .07, 2600);
+    const n = noiseSrc(a, .5), f = a.createBiquadFilter(), g = a.createGain(); f.type = "lowpass"; f.frequency.setValueAtTime(3000, t + .28); f.frequency.exponentialRampToValueAtTime(300, t + .7);
+    env(a, g, t + .28, .8, .005, .4); n.connect(f).connect(g).connect(a.destination); n.start(t + .28); n.stop(t + .8);
+    for (let i = 0; i < 10; i++) { const tt = t + .42 + Math.random() * .4, c = noiseSrc(a, .02), hp = a.createBiquadFilter(), cg = a.createGain(); hp.type = "highpass"; hp.frequency.value = 3000; env(a, cg, tt, .25, .002, .02); c.connect(hp).connect(cg).connect(a.destination); c.start(tt); c.stop(tt + .03); }
+  },
   home() { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * .09, .25, "triangle", .14)); },
   turn() { tone(880, 0, .18, "sine", .16); tone(1175, .14, .3, "sine", .16); },
   win() {
@@ -810,6 +827,18 @@ function ghostFx(x, y) {
   const gh = fxG.append("text").attr("x", x).attr("y", y).attr("text-anchor", "middle").attr("font-size", 34).attr("opacity", 0).text("👻");
   gh.transition().delay(220).duration(250).attr("opacity", 1).transition().duration(1300).ease(d3.easeQuadOut).attr("y", y - 70).attr("opacity", 0).remove();
 }
+function fireworkFx(x, y) {
+  const cols = ["#ffeb3b", "#ff5252", "#40c4ff", "#69f0ae", "#ffffff", "#ff9100"];
+  [[0, -62, 0], [-36, -40, 180], [34, -46, 340]].forEach(([dx, dy, delay]) => {
+    const cx = x + dx, cy = y + dy, n = 14;
+    for (let k = 0; k < n; k++) {
+      const ang = k / n * Math.PI * 2, r = 26 + Math.random() * 10, c = cols[(k + delay) % cols.length];
+      fxG.append("circle").attr("cx", cx).attr("cy", cy).attr("r", 4).attr("fill", c).attr("opacity", 0)
+        .transition().delay(300 + delay).duration(1).attr("opacity", 1)
+        .transition().duration(900).ease(d3.easeQuadOut).attr("cx", cx + Math.cos(ang) * r).attr("cy", cy + Math.sin(ang) * r + 8).attr("r", 1.5).attr("opacity", 0).remove();
+    }
+  });
+}
 async function animateTokens(from, to) {
   const g = R.game; ensureTokens();
   const fromPos = layout(from);
@@ -827,7 +856,7 @@ async function animateTokens(from, to) {
       SND.step();
       await el.transition().duration(165).ease(d3.easeQuadOut).attr("transform", `translate(${x * CELL},${y * CELL + PAWN_Y - 4}) scale(1.12)`).end().catch(() => {});
     }
-    if (mv.b === 56) SND.home();
+    if (mv.b === 56) { const [fx, fy] = P(g.col[mv.u], 56, mv.i); SND.firework(); fireworkFx(fx * CELL, fy * CELL); }
   }
   if (captured.length) {
     SND.slash(); setTimeout(() => SND.boo(), 300);
@@ -990,6 +1019,7 @@ function openMenu() {
     <div class="it">🎲 O dado é justo: cada número de 1 a 6 tem a mesma chance.</div>
     <div class="it">🚪 Para tirar uma peça da base, precisa tirar 6.</div>
     <div class="it">🎲🎲 Sem nenhuma peça no tabuleiro? Você joga 2 dados para ajudar a sair. Se sair um 6 (ou dois), sai só uma peça e você joga de novo.</div>
+    <div class="it">🍀 Enquanto você tiver peça na base, o 6 sai com mais facilidade (2 chances em 6).</div>
     <div class="it">🔁 Tirou 6, joga de novo. Três 6 seguidos: perde a vez.</div>
     <div class="it">💥 Caiu numa casa com peça adversária: ela volta para a base e você joga de novo.</div>
     <div class="it">★ Casas com estrela (e as de saída) são seguras: ninguém é capturado nelas.</div>
@@ -1067,7 +1097,7 @@ function updateUI() {
     if (u === cur(g) && !g.ended) el.classList.add("cur");
     if (isOut(g, u) && !g.ended) el.classList.add("out");
     el.innerHTML = `<div class="av" style="background:${LC[g.col[u]].f}">${esc(initial(nm(g, u)))}${place ? `<i class="md">${place}</i>` : ""}${on ? "" : `<i class="off">📴</i>`}</div>
-      <div class="an"><b>${esc(nm(g, u))}</b><small>${u === uid ? "você · " : ""}${g.mode === "duo" ? `Dupla ${g.team[u] ? "B" : "A"} · ` : ""}🏠 ${home}/4</small></div>`;
+      <div class="an"><b>${esc(nm(g, u))}</b><small>${u === uid ? "você · " : ""}${g.mode === "duo" ? `Dupla ${g.team[u] ? "B" : "A"} · ` : ""}🏠 ${home}/4</small><span class="kd">💀 ${g.kills[u] || 0} <span class="cr">✝</span> ${g.deaths[u] || 0}</span></div>`;
   });
   const mine = !g.ended && cur(g) === uid;
   let txt;
