@@ -429,7 +429,6 @@ async function openRanking() {
   FRIENDS.forEach(f => { if (!rows.some(r => r.n === f)) rows.push({n: f, p1:0, p2:0, p3:0, p4:0, dw:0, dl:0, games:0}); });
   rows.sort((a, b) => (b.p1 - a.p1) || ((b.dw || 0) - (a.dw || 0)) || (b.p2 - a.p2) || (b.p3 - a.p3) || (a.n > b.n ? 1 : -1));
   openModal(`<h3>🏆 Ranking geral</h3>
-    <div class="lbl">Todas as partidas de todo mundo. Nomes com erro de digitação ou parecidos contam para a pessoa certa, mesmo que seja o pato do <br>MIGUEL</BR>.</div>
     <table class="rk"><tr><th>Nome</th><th>🥇</th><th>🥈</th><th>🥉</th><th>4º</th><th>Duplas<br>V / D</th><th>Jogos</th></tr>
     ${rows.map((r, i) => `<tr class="${i === 0 && (r.p1 || r.dw) ? "top1" : ""}"><td><b>${i + 1}.</b> ${esc(funName(r.n))}</td><td>${r.p1 || 0}</td><td>${r.p2 || 0}</td><td>${r.p3 || 0}</td><td>${r.p4 || 0}</td><td>${r.dw || 0} / ${r.dl || 0}</td><td>${r.games || 0}</td></tr>`).join("")}</table>
     <button class="btn" id="rkClose">Fechar</button>`, "rank");
@@ -824,8 +823,9 @@ setInterval(() => {
 }, 250);
 
 /* ================= BOTÕES ================= */
-$("bCreate").onclick = () => uid ? createRoom() : toast("Ainda conectando…");
-$("bJoin").onclick = () => uid ? joinRoom($("codeIn").value) : toast("Ainda conectando…");
+const safeRun = fn => fn().catch(e => { console.error(e); toast(String(e && (e.code || e.message) || "").includes("PERMISSION") || String(e).toLowerCase().includes("permission") ? "O Firebase bloqueou o acesso: publique as regras novas (Realtime Database → Regras)." : "Erro: " + (e.message || e), 5000); });
+$("bCreate").onclick = () => uid ? safeRun(createRoom) : toast("Ainda conectando…");
+$("bJoin").onclick = () => uid ? safeRun(() => joinRoom($("codeIn").value)) : toast("Ainda conectando…");
 $("codeIn").addEventListener("keydown", e => { if (e.key === "Enter") $("bJoin").click(); });
 $("bRank").onclick = () => uid ? openRanking() : toast("Ainda conectando…");
 $("bShare").onclick = share;
