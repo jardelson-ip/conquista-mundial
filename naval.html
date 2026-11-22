@@ -60,7 +60,7 @@ input{font:inherit}
 .tab.sel{border-color:var(--accd);background:var(--acc);color:#fff}
 .tab.done{opacity:.55}
 .btitle{font:20px "Lilita One",system-ui,sans-serif;letter-spacing:.5px;color:var(--accd);text-align:center}
-.grid{display:grid;gap:2px;width:min(94vw,calc(100vh - 330px),520px);aspect-ratio:1;background:var(--panel);padding:6px;border-radius:16px;border:2px solid var(--line);box-shadow:0 6px 0 rgba(58,151,230,.15)}
+.grid{display:grid;gap:2px;width:min(94vw,calc(100dvh - 360px),520px);aspect-ratio:1;background:var(--panel);padding:6px;border-radius:16px;border:2px solid var(--line);box-shadow:0 6px 0 rgba(58,151,230,.15)}
 .lb{display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:var(--mut)}
 .cl{background:var(--sea);border-radius:5px;position:relative;display:flex;align-items:center;justify-content:center;font-size:min(4.2vw,22px);line-height:1;overflow:visible}
 .cl.click{cursor:pointer}
@@ -126,6 +126,65 @@ table.rk tr.top1 td{background:#fff6cc}
 .bp .btn{font:20px "Lilita One",system-ui,sans-serif;letter-spacing:.5px;padding:12px}
 @keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
 #shotBar.on{animation:none}
+
+/* ===== visual novo: mar, navios, barra de jogadores, faixa de ataque ===== */
+.grid{position:relative;isolation:isolate;background:linear-gradient(180deg,#3d98dc,#2a78bd);border:4px solid var(--own,#a9d3f5);transition:border-color .3s}
+.grid::before{content:"";position:absolute;inset:0;border-radius:12px;pointer-events:none;z-index:0;opacity:.35;
+  background:repeating-linear-gradient(170deg,transparent 0 14px,rgba(255,255,255,.35) 15px,transparent 17px 30px);background-size:200% 200%;animation:waves 9s linear infinite}
+@keyframes waves{to{background-position:-160px 80px}}
+.grid .lb{color:#e7f3ff;text-shadow:0 1px 1px rgba(0,0,0,.35);position:relative;z-index:1}
+.cl{background:rgba(255,255,255,.10);box-shadow:inset 0 0 0 1px rgba(255,255,255,.18);z-index:auto}
+.cl.click:hover{background:rgba(255,255,255,.3)}
+.cl.ship,.cl.sunk,.cl.ship.selS{background:rgba(255,255,255,.10)}
+.cl.hit::after,.cl.miss::after{position:relative;z-index:3}
+.cl.hit::after{content:"🔥";animation:fire .45s ease-in-out infinite alternate;display:block;filter:drop-shadow(0 0 4px #ff9800)}
+@keyframes fire{to{transform:scale(1.18) translateY(-2px)}}
+.cl.sunk.hit::after{content:"💥";animation:none}
+.grid.under{--own:#ff3b30 !important;animation:underA .8s ease-in-out infinite}
+@keyframes underA{50%{box-shadow:0 0 0 5px rgba(255,59,48,.35),0 0 26px rgba(255,59,48,.7)}}
+.grid.drag{touch-action:none}
+.ships{position:absolute;inset:0;pointer-events:none;z-index:1}
+.shipv{position:absolute;padding:2px}
+.shipv .sv{position:absolute;left:0;top:0}
+.shipv .sv2{width:100%;height:100%;animation:bob 3.2s ease-in-out infinite;animation-delay:var(--dl,0s);filter:drop-shadow(0 3px 2px rgba(0,0,0,.35))}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-6%) rotate(.8deg)}}
+.shipv .wk{transform-box:fill-box;transform-origin:center;animation:wake 1.4s ease-out infinite}
+.shipv .wk.w2{animation-delay:.7s}
+@keyframes wake{from{opacity:.8;transform:scale(.6)}to{opacity:0;transform:scale(1.4)}}
+.shipv .smk{transform-box:fill-box;transform-origin:center;animation:smoke 2.2s ease-out infinite}
+.shipv .smk.s2{animation-delay:1.1s}
+@keyframes smoke{from{opacity:.85;transform:translate(0,0) scale(.6)}to{opacity:0;transform:translate(-18px,-22px) scale(1.6)}}
+.shipv.sel .sv2{filter:drop-shadow(0 0 3px #ffd54a) drop-shadow(0 0 7px #ffd54a)}
+.shipv.sunk .sv2{animation:none;filter:grayscale(1) brightness(.5) drop-shadow(0 2px 2px rgba(0,0,0,.4));transform:rotate(-5deg) translateY(6%);opacity:.92}
+.shipv.sunk .wk,.shipv.sunk .smk{display:none}
+/* barra de jogadores (toque para ver o mar de cada um) */
+.pbar{display:flex;gap:6px;padding:8px 8px 6px;overflow-x:auto;background:var(--panel);scrollbar-width:none;justify-content:center}
+.pbar::-webkit-scrollbar{display:none}
+.pcard{position:relative;flex:1 1 0;min-width:68px;max-width:110px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px 5px;border-radius:14px;background:var(--panel2);border:3px solid transparent;color:var(--txt)}
+.pcard.view{border-color:var(--accd);background:#fff;box-shadow:0 3px 0 var(--line)}
+.pcard .pav{width:40px;height:40px;border-radius:11px;background:var(--c);color:#fff;display:flex;align-items:center;justify-content:center;font:22px/1 "Lilita One",system-ui,sans-serif;text-shadow:0 2px 0 rgba(0,0,0,.3);border:2px solid #fff;box-shadow:0 3px 0 rgba(0,0,0,.2)}
+.pcard .pnm{font-size:12.5px;font-weight:800;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcard .pst{font-size:11.5px;font-weight:700;color:var(--mut);white-space:nowrap}
+.pcard .bdg{position:absolute;top:-7px;right:-4px;font-size:11px;font-weight:800;padding:1px 6px;border-radius:999px;color:#fff;white-space:nowrap}
+.pcard.atk .pav{animation:atkG .9s ease-in-out infinite}
+@keyframes atkG{50%{box-shadow:0 0 0 4px rgba(255,193,7,.6),0 0 16px rgba(255,193,7,.9)}}
+.pcard.atk .bdg{background:#f59e0b}
+.pcard.tgt .bdg{background:#ef4444;animation:pulseB .8s infinite}
+@keyframes pulseB{50%{transform:scale(1.12)}}
+.pcard.tgt .pav::after{content:"";position:absolute;width:52px;height:52px;border-radius:50%;border:3px dashed #ef4444;animation:spin 3s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pcard.dead{opacity:.45;filter:grayscale(.8)}
+.pcard .pav{position:relative}
+/* faixa de quem ataca quem */
+.turnbar{display:none;align-items:center;justify-content:center;gap:8px;padding:8px 10px;color:#fff;font-weight:800;font-size:15px;text-align:center;background:linear-gradient(90deg,var(--ca,#3a97e6),var(--cb,#1f6fb8));text-shadow:0 1px 2px rgba(0,0,0,.35);min-height:44px}
+.turnbar.on{display:flex}
+.turnbar .mini{width:28px;height:28px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font:16px/1 "Lilita One",system-ui,sans-serif;border:2px solid #fff;flex:none}
+.turnbar .arr{font-size:20px;animation:arr 1s ease-in-out infinite}
+@keyframes arr{50%{transform:translateX(4px)}}
+.turnbar.alert{background:linear-gradient(90deg,#b91c1c,#ef4444);animation:alertB 1s ease-in-out infinite}
+@keyframes alertB{50%{filter:brightness(1.18)}}
+.turnbar.mine{background:linear-gradient(90deg,#f59e0b,#f97316)}
+.btitle .own{display:inline-flex;align-items:center;gap:6px;padding:2px 12px;border-radius:999px;background:var(--own);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.3)}
 </style>
 </head>
 <body>
@@ -181,9 +240,9 @@ table.rk tr.top1 td{background:#fff6cc}
     <button class="ibtn" id="bChat" aria-label="Chat da dupla" style="display:none">💬<span id="nChat"></span></button>
     <button class="ibtn" id="bMenu" aria-label="Menu">☰</button>
   </div>
-  <div class="chips" id="gChips"></div>
+  <div class="pbar" id="pbar"></div>
+  <div class="turnbar" id="turnbar"></div>
   <div id="main">
-    <div class="tabs" id="tabs"></div>
     <div class="btitle" id="bTitle"></div>
     <div class="grid" id="grid"></div>
   </div>
@@ -373,7 +432,7 @@ function sunkIdx(g, u) { const f = g.fleets[u] || []; return f.map((s, i) => shi
 const shipsLeft = (g, u) => (g.fleets[u] || []).length - sunkIdx(g, u).length;
 function logp(g, s) { g.log.push(s); if (g.log.length > 50) g.log = g.log.slice(-50); }
 function nextTurn(g) {
-  g.shotTurn = {};
+  g.shotTurn = {}; g.aim = null;
   let i = g.turn, guard = 0;
   do { i = (i + 1) % g.order.length; guard++; } while (isOut(g, g.order[i]) && guard < 10);
   g.turn = i; g.turnNo = (g.turnNo || 0) + 1; g.deadline = now() + TURN_MS;
@@ -720,7 +779,7 @@ function openMenu() {
   $("mShare").onclick = share; $("mRank").onclick = openRanking; $("mLeave").onclick = leaveRoom; $("mClose").onclick = closeModal;
   $("mLog").onclick = () => { const g = R.game; openModal(`<h3>📜 Registro</h3><div class="list">${(g ? g.log : []).slice().reverse().map(l => `<div class="it" style="font-size:14px">${esc(l)}</div>`).join("")}</div><button class="btn" id="lgClose">Fechar</button>`, "log"); $("lgClose").onclick = closeModal; };
   $("mHelp").onclick = () => { openModal(`<h3>Regras</h3><div class="list" style="font-size:14px;line-height:1.45">
-    <div class="it">⚓ Cada um posiciona a frota no seu mar (pode tocar num navio para mover, girar ou usar "Aleatório").</div>
+    <div class="it">⚓ Cada um posiciona a frota no seu mar (arraste os navios com o dedo, toque numa casa para levar o navio escolhido até lá, gire ou use "Aleatório").</div>
     <div class="it">🎲 Todos jogam o dado (chance igual de 1 a 6): quem tirar mais começa. Empate: quem jogou primeiro.</div>
     <div class="it">🎯 Na sua vez, você dá 1 tiro em CADA adversário que ainda tem navio. Ninguém fica sendo atacado só por um.</div>
     <div class="it">🔥 Acerto · 💦 Água · 💥 Navio afundado (todos veem quando um navio afunda).</div>
@@ -735,6 +794,64 @@ async function share() {
   try { if (navigator.share) { await navigator.share({title: "Batalha Naval", text: txt}); return; } } catch (e) {}
   try { await navigator.clipboard.writeText(txt); toast("Convite copiado!"); } catch (e) { toast(link, 5000); }
 }
+
+/* ================= NAVIOS DESENHADOS (animados) ================= */
+function shipSVG(s, colIdx) {
+  const L = s.len * 100, c = PCOL[colIdx] ? PCOL[colIdx].f : "#94a3b8", n = s.name;
+  const hullG = `<linearGradient id="hg${s.len}${colIdx}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9aa8b8"/><stop offset=".55" stop-color="#6b7a8d"/><stop offset="1" stop-color="#465466"/></linearGradient>`;
+  const hull = (top, bot) => `M10,${(top + bot) / 2} Q12,${top} 34,${top} L${L - 52},${top} Q${L - 14},${top + 2} ${L - 4},${(top + bot) / 2} Q${L - 14},${bot - 2} ${L - 52},${bot} L34,${bot} Q12,${bot} 10,${(top + bot) / 2} Z`;
+  let body = "";
+  if (n === "Submarino") {
+    body = `<ellipse cx="${L / 2}" cy="56" rx="${L / 2 - 8}" ry="24" fill="#3f4b5c" stroke="#263140" stroke-width="3"/>
+      <ellipse cx="${L / 2 - 10}" cy="47" rx="${L / 2 - 40}" ry="7" fill="#5b6a7e"/>
+      <rect x="${L / 2 - 26}" y="22" width="44" height="26" rx="8" fill="#4b5869" stroke="#263140" stroke-width="3"/>
+      <line x1="${L / 2 + 6}" y1="22" x2="${L / 2 + 6}" y2="6" stroke="#263140" stroke-width="4"/><line x1="${L / 2 + 6}" y1="7" x2="${L / 2 + 16}" y2="7" stroke="#263140" stroke-width="4"/>
+      <rect x="40" y="62" width="${L - 80}" height="5" rx="2.5" fill="${c}"/>
+      <circle cx="${L / 2 - 4}" cy="35" r="4" fill="#cfe8ff"/>`;
+  } else {
+    const wide = n === "Porta-aviões", top = wide ? 16 : 26, bot = wide ? 86 : 80;
+    body = `<path d="${hull(top, bot)}" fill="url(#hg${s.len}${colIdx})" stroke="#2f3b4b" stroke-width="3"/>
+      <path d="${hull(top + 7, bot - 9)}" fill="#a7b4c3" opacity=".55"/>
+      <rect x="30" y="${bot - 12}" width="${L - 90}" height="5" rx="2.5" fill="${c}"/>`;
+    if (wide) {
+      body += `<line x1="40" y1="51" x2="${L - 80}" y2="51" stroke="#fff" stroke-width="3" stroke-dasharray="14 10" opacity=".85"/>
+        <rect x="${L - 150}" y="18" width="46" height="22" rx="4" fill="#4b5869" stroke="#2f3b4b" stroke-width="3"/>
+        <rect x="${L - 138}" y="8" width="14" height="12" fill="#2f3b4b"/>
+        <text x="90" y="44" font-size="30" transform="rotate(90 90 34)" fill="#2f3b4b">✈</text>
+        <text x="190" y="44" font-size="30" transform="rotate(90 190 34)" fill="#2f3b4b">✈</text>`;
+    } else {
+      const tur = x => `<circle cx="${x}" cy="53" r="13" fill="#56657a" stroke="#2f3b4b" stroke-width="3"/><rect x="${x + 6}" y="49" width="30" height="7" rx="3" fill="#2f3b4b"/>`;
+      const turB = x => `<circle cx="${x}" cy="53" r="13" fill="#56657a" stroke="#2f3b4b" stroke-width="3"/><rect x="${x - 36}" y="49" width="30" height="7" rx="3" fill="#2f3b4b"/>`;
+      const bridge = (x, w) => `<rect x="${x}" y="36" width="${w}" height="34" rx="6" fill="#d7dee7" stroke="#2f3b4b" stroke-width="3"/><rect x="${x + 6}" y="42" width="${w - 12}" height="7" rx="2" fill="#5b8dbf"/>`;
+      const funnel = x => `<rect x="${x}" y="30" width="20" height="30" rx="5" fill="#3d4a5b" stroke="#2f3b4b" stroke-width="2"/><rect x="${x}" y="30" width="20" height="7" fill="${c}"/>
+        <circle class="smk" cx="${x + 10}" cy="22" r="7" fill="#cbd5e1"/><circle class="smk s2" cx="${x + 10}" cy="22" r="6" fill="#e2e8f0"/>`;
+      if (n === "Encouraçado") body += turB(70) + tur(L - 120) + bridge(L / 2 - 50, 64) + funnel(L / 2 + 22) + `<circle cx="${L - 70}" cy="53" r="8" fill="#56657a" stroke="#2f3b4b" stroke-width="2"/>`;
+      else if (n === "Cruzador") body += turB(64) + bridge(L / 2 - 30, 56) + funnel(L / 2 + 34) + tur(L - 90);
+      else body += bridge(50, 52) + funnel(112) + tur(L - 66);   // Destroier
+    }
+  }
+  const wake = `<ellipse class="wk" cx="6" cy="54" rx="10" ry="18" fill="none" stroke="#fff" stroke-width="3" opacity=".7"/><ellipse class="wk w2" cx="-4" cy="54" rx="10" ry="24" fill="none" stroke="#fff" stroke-width="2.5" opacity=".5"/>`;
+  return `<svg viewBox="-20 ${n === "Porta-aviões" ? 10 : 16} ${L + 30} ${n === "Porta-aviões" ? 82 : 72}" preserveAspectRatio="none" width="100%" height="100%"><defs>${hullG}</defs>${wake}${body}</svg>`;
+}
+// desenha os navios por cima da grade, ocupando as casas certas
+function drawShips(fleet, colIdx, opt = {}) {
+  const grid = $("grid"); let lay = grid.querySelector(".ships"); if (lay) lay.remove();
+  lay = document.createElement("div"); lay.className = "ships"; grid.appendChild(lay);
+  const cellEl = (r, c) => grid.querySelector(`.cl[data-r="${r}"][data-c="${c}"]`);
+  fleet.forEach((s, i) => {
+    if (!s || (opt.only && !opt.only.has(i))) return;
+    const [r1, c1] = shipCells(s)[s.len - 1], a = cellEl(s.r, s.c), b = cellEl(r1, c1); if (!a || !b) return;
+    const x = a.offsetLeft, y = a.offsetTop, w = b.offsetLeft + b.offsetWidth - x, h = b.offsetTop + b.offsetHeight - y;
+    const box = document.createElement("div");
+    box.className = "shipv" + (opt.sunk && opt.sunk.has(i) ? " sunk" : "") + (opt.sel === i ? " sel" : "");
+    box.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${h}px;--dl:${-(i * .7).toFixed(1)}s`;
+    const long = s.d === "h" ? w : h, short = s.d === "h" ? h : w;
+    box.innerHTML = `<div class="sv" style="width:${long}px;height:${short}px;${s.d === "v" ? "transform-origin:0 0;transform:rotate(90deg) translateY(-100%)" : ""}"><div class="sv2">${shipSVG(s, colIdx)}</div></div>`;
+    lay.appendChild(box);
+  });
+}
+let lastShipsArgs = null;
+addEventListener("resize", () => { clearTimeout(window.__rz); window.__rz = setTimeout(() => R && R.game && renderGame(), 120); });
 
 /* ================= GRADE ================= */
 function drawGrid(N, cellFn, onClick) {
@@ -757,26 +874,66 @@ function boardCells(g, u, showShips) {
 }
 
 /* ================= POSICIONAR FROTA ================= */
-let draft = null, draftSize = null, selShip = -1;
+let draft = null, draftSize = null, selShip = -1, drag = null;
+function clampShip(s, N) {
+  const mr = s.d === "v" ? N - s.len : N - 1, mc = s.d === "h" ? N - s.len : N - 1;
+  return {...s, r: Math.max(0, Math.min(mr, s.r)), c: Math.max(0, Math.min(mc, s.c))};
+}
+// acha a vaga livre mais perto de onde a pessoa tocou (mesma direção primeiro)
+function placeNear(fleet, idx, want, N, onlyDir) {
+  let best = null, bd = 1e9;
+  for (const d of onlyDir ? [want.d] : ["h", "v"]) for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+    const s = {...fleet[idx], d, r, c};
+    if (!fits(fleet, idx, s, N)) continue;
+    const dist = Math.abs(r - want.r) + Math.abs(c - want.c) + (d !== want.d ? .6 : 0);
+    if (dist < bd) { bd = dist; best = s; }
+  }
+  return best;
+}
 function renderSetup(g) {
   if (!draft || draftSize !== g.size) { draft = randomFleet(g.size); draftSize = g.size; selShip = -1; }
-  const ready = !!g.ready[uid];
+  const ready = !!g.ready[uid], N = g.size;
   const fleet = ready ? g.fleets[uid] : draft;
-  $("tabs").innerHTML = ""; $("bTitle").textContent = ready ? "Sua frota está pronta ✔" : "Posicione sua frota";
-  drawGrid(g.size, (r, c) => { const i = shipAt(fleet, r, c); return i >= 0 ? {cls: `ship ${shipShape(fleet[i], r, c)} ${i === selShip ? "selS" : ""}`} : {}; }, ready ? null : (r, c) => {
-    const i = shipAt(draft, r, c);
-    if (i >= 0) { selShip = i === selShip ? -1 : i; return renderGame(); }
-    if (selShip < 0) return toast("Toque num navio para escolher, depois toque onde quer colocar.");
-    const s = {...draft[selShip], r, c};
-    if (!fits(draft, selShip, s, g.size)) { const s2 = {...s, d: s.d === "h" ? "v" : "h"}; if (fits(draft, selShip, s2, g.size)) { draft[selShip] = s2; return renderGame(); } return toast("Não cabe aí."); }
-    draft[selShip] = s; renderGame();
-  });
+  $("bTitle").innerHTML = ready ? "Sua frota está pronta ✔" : "Posicione sua frota";
+  $("grid").style.setProperty("--own", PCOL[g.col[uid]] ? PCOL[g.col[uid]].f : "#a9d3f5");
+  drawGrid(N, () => ({}), null);
+  drawShips(fleet, g.col[uid], {sel: ready ? -1 : selShip});
+  const grid = $("grid"); grid.classList.toggle("drag", !ready); grid.classList.remove("under");
+  const cellAt = (x, y) => { const el = document.elementFromPoint(x, y); const t = el && el.closest && el.closest("#grid .cl"); return t ? [+t.dataset.r, +t.dataset.c] : null; };
+  grid.onpointerdown = ready ? null : e => {
+    const rc = cellAt(e.clientX, e.clientY); if (!rc) return;
+    const i = shipAt(draft, rc[0], rc[1]);
+    drag = {i, wasSel: i >= 0 && i === selShip, r0: rc[0], c0: rc[1], last: rc.join("_"), moved: false, dr: i >= 0 ? rc[0] - draft[i].r : 0, dc: i >= 0 ? rc[1] - draft[i].c : 0};
+    if (i >= 0) { selShip = i; try { grid.setPointerCapture(e.pointerId); } catch (x) {} drawShips(draft, g.col[uid], {sel: selShip}); }
+    e.preventDefault();
+  };
+  grid.onpointermove = ready ? null : e => {
+    if (!drag || drag.i < 0) return;
+    const rc = cellAt(e.clientX, e.clientY); if (!rc || rc.join("_") === drag.last) return;
+    drag.last = rc.join("_"); drag.moved = true;
+    const want = clampShip({...draft[drag.i], r: rc[0] - drag.dr, c: rc[1] - drag.dc}, N);
+    if (fits(draft, drag.i, want, N)) { draft[drag.i] = want; drawShips(draft, g.col[uid], {sel: selShip}); }
+  };
+  grid.onpointerup = grid.onpointercancel = ready ? null : e => {
+    const d = drag; drag = null; if (!d) return;
+    if (d.i >= 0) { if (!d.moved && d.i === selShip && d.wasSel) selShip = -1; return renderGame(); }
+    // tocou numa casa vazia: leva o navio escolhido para lá (ou para a vaga livre mais perto)
+    if (selShip < 0) { toast("Toque num navio (ou arraste ele) para mover."); return; }
+    const want = clampShip({...draft[selShip], r: d.r0, c: d.c0}, N);
+    const s2 = fits(draft, selShip, want, N) ? want : placeNear(draft, selShip, want, N);
+    if (s2) draft[selShip] = s2; else toast("Não achei espaço livre perto daí.");
+    renderGame();
+  };
   const waiting = g.order.filter(u => !g.ready[u]).map(u => esc(nm(g, u)));
-  $("gBanner").innerHTML = ready ? `Aguardando: <b>${waiting.join(", ")}</b>` : (selShip >= 0 ? `<b>${draft[selShip].name}</b> (${draft[selShip].len} casas) selecionado: toque onde colocar ou gire.` : "Toque num navio para mover. Quando estiver bom, toque em <b>Pronto</b>.");
+  $("gBanner").innerHTML = ready ? `Aguardando: <b>${waiting.join(", ")}</b>` : (selShip >= 0 ? `<b>${draft[selShip].name}</b> (${draft[selShip].len} casas): arraste, toque onde quer colocar ou gire.` : "<b>Arraste</b> os navios com o dedo ou toque num navio e depois na casa. Quando estiver bom: <b>Pronto</b>.");
   $("acts").innerHTML = ready ? "" : `<button class="btn" id="aRand">🔀 Aleatório</button><button class="btn" id="aRot" ${selShip < 0 ? "disabled" : ""}>↻ Girar</button><button class="btn pri" id="aReady">Pronto ✔</button>`;
   if (!ready) {
-    $("aRand").onclick = () => { draft = randomFleet(g.size); selShip = -1; renderGame(); };
-    $("aRot").onclick = () => { if (selShip < 0) return; const s = draft[selShip], s2 = {...s, d: s.d === "h" ? "v" : "h"}; if (fits(draft, selShip, s2, g.size)) { draft[selShip] = s2; renderGame(); } else toast("Não dá pra girar aí: mova o navio primeiro."); };
+    $("aRand").onclick = () => { draft = randomFleet(N); selShip = -1; renderGame(); };
+    $("aRot").onclick = () => {
+      if (selShip < 0) return; const s = draft[selShip], s2 = {...s, d: s.d === "h" ? "v" : "h"};
+      const ok = fits(draft, selShip, clampShip(s2, N), N) ? clampShip(s2, N) : placeNear(draft, selShip, s2, N, true);
+      if (ok) { draft[selShip] = ok; renderGame(); } else toast("Não há espaço para girar esse navio.");
+    };
     $("aReady").onclick = () => { $("aReady").disabled = true; selShip = -1; aReadyFleet(draft); };
   }
 }
@@ -784,8 +941,10 @@ function renderSetup(g) {
 /* ================= DADO DA ORDEM ================= */
 function renderRoll(g) {
   const mine = g.rolls[uid];
-  $("tabs").innerHTML = ""; $("bTitle").textContent = "Sua frota";
-  drawGrid(g.size, boardCells(g, uid, true), null);
+  $("bTitle").innerHTML = "Sua frota"; $("grid").classList.remove("drag", "under");
+  $("grid").style.setProperty("--own", PCOL[g.col[uid]].f);
+  $("grid").onpointerdown = $("grid").onpointermove = $("grid").onpointerup = $("grid").onpointercancel = null;
+  drawGrid(g.size, boardCells(g, uid, true), null); drawShips(g.fleets[uid] || [], g.col[uid]);
   const list = g.order.map(u => `${esc(nm(g, u))}: ${g.rolls[u] ? "🎲 <b>" + g.rolls[u].v + "</b>" : "…"}`).join(" · ");
   $("gBanner").innerHTML = `Quem tirar mais no dado começa.<br><span style="font-size:14px">${list}</span>`;
   $("acts").innerHTML = `<button class="bigbtn" id="aRoll" ${mine ? "disabled" : ""}>${mine ? "Aguardando os outros…" : "🎲 Jogar o dado"}</button>`;
@@ -793,20 +952,24 @@ function renderRoll(g) {
 }
 
 /* ================= BATALHA ================= */
-let view = null, viewLock = 0;
+let view = null, viewLock = 0, aimSent = "";
+function setAim(g, t) {
+  const key = g.turnNo + ":" + t; if (aimSent === key || g.aim === t) return; aimSent = key;
+  update(ref(db, `${ROOT}/rooms/${roomCode}/game`), {aim: t}).catch(() => {});
+}
 function renderBattle(g) {
   const mine = !g.ended && cur(g) === uid, pend = mine ? pending(g, uid) : [];
   if (!view || !g.order.includes(view)) view = uid;
   if (mine && Date.now() > viewLock && !pend.includes(view) && pend.length) view = pend[0];
-  // abas: o meu mar, o do parceiro e o de cada adversário
-  $("tabs").innerHTML = g.order.map(u => {
-    const tag = u === uid ? "Meu mar" : esc(nm(g, u));
-    const st = isOut(g, u) ? " ☠️" : (mine && !allies(g, uid, u) ? (g.shotTurn[u] ? " ✔" : " 🎯") : "");
-    return `<button class="tab ${u === view ? "sel" : ""} ${mine && g.shotTurn[u] ? "done" : ""}" data-u="${u}"><i class="dot" style="background:${PCOL[g.col[u]].f}"></i>${tag}${st}</button>`;
-  }).join("");
-  document.querySelectorAll(".tab").forEach(b => b.onclick = () => { view = b.dataset.u; viewLock = Date.now() + 4000; renderGame(); });
-  const own = allies(g, uid, view);
-  $("bTitle").textContent = view === uid ? "Meu mar" : (own ? `Mar do parceiro: ${nm(g, view)}` : `Mar de ${nm(g, view)} · ${shipsLeft(g, view)} navio${shipsLeft(g, view) === 1 ? "" : "s"}`);
+  // quem não está jogando acompanha automaticamente o mar que está sendo atacado
+  if (!mine && !g.ended && g.aim && Date.now() > viewLock) view = g.aim;
+  if (mine && pend.includes(view)) setAim(g, view);
+  const own = allies(g, uid, view), oc = PCOL[g.col[view]].f;
+  const under = !g.ended && g.aim === view && !isOut(g, view);
+  $("grid").style.setProperty("--own", oc); $("grid").classList.toggle("under", under); $("grid").classList.remove("drag");
+  $("grid").onpointerdown = $("grid").onpointermove = $("grid").onpointerup = $("grid").onpointercancel = null;
+  const left = shipsLeft(g, view);
+  $("bTitle").innerHTML = `<span class="own" style="--own:${oc}">🌊 ${view === uid ? "Meu mar" : (own ? "Mar do parceiro " + esc(nm(g, view)) : "Mar de " + esc(nm(g, view)))} · 🚢 ${left}</span>`;
   const canShoot = mine && pend.includes(view);
   drawGrid(g.size, (r, c) => { const o = boardCells(g, view, own)(r, c); if (canShoot && !hitAt(g, view, r, c)) o.cls += " click"; return o; }, canShoot ? (r, c) => {
     if (hitAt(g, view, r, c)) return toast("Já atiraram aí.");
@@ -814,11 +977,50 @@ function renderBattle(g) {
     shotBusy = true; setTimeout(() => shotBusy = false, 900);
     viewLock = Date.now() + 1400; aShoot(view, r, c);
   } : null);
+  const sunk = new Set(sunkIdx(g, view));
+  drawShips(g.fleets[view] || [], g.col[view], {sunk, only: own ? null : sunk});
   if (g.ended) $("gBanner").innerHTML = g.mode === "duo" ? `🏆 <b>Dupla ${g.winTeam ? "B" : "A"}</b> venceu!` : `🏆 <b>${esc(nm(g, g.places[0]))}</b> venceu!`;
-  else if (isOut(g, uid)) $("gBanner").innerHTML = `☠️ Sua frota foi afundada. Assistindo… Vez de <b>${esc(nm(g, cur(g)))}</b>.`;
-  else if (mine) $("gBanner").innerHTML = pend.length ? `<b>Sua vez!</b> Dê 1 tiro em cada adversário. Falta${pend.length > 1 ? "m" : ""}: <b>${pend.map(u => esc(nm(g, u))).join(", ")}</b>` : "Tiros dados!";
-  else $("gBanner").innerHTML = `Vez de <b style="color:${PCOL[g.col[cur(g)]].f}">${esc(nm(g, cur(g)))}</b> atirar`;
+  else if (isOut(g, uid)) $("gBanner").innerHTML = `☠️ Sua frota foi afundada. Assistindo…`;
+  else if (mine) $("gBanner").innerHTML = pend.length ? (canShoot ? `Toque numa casa do mar de <b>${esc(nm(g, view))}</b> para atirar.` : `Toque no jogador com <b>🎯</b> lá em cima para escolher o alvo.`) + (pend.length > 1 ? `<br><span style="font-size:13px">Falta atirar em: ${pend.map(u => esc(nm(g, u))).join(", ")}</span>` : "") : "Tiros dados!";
+  else $("gBanner").innerHTML = view === uid ? "Este é o seu mar. Toque nos jogadores lá em cima para ver os outros." : "Toque nos jogadores lá em cima para ver o mar de cada um.";
   $("acts").innerHTML = "";
+}
+// faixa grande: quem ataca quem
+function renderTurnBar(g) {
+  const tb = $("turnbar");
+  if (g.phase !== "battle" || g.ended) { tb.className = "turnbar"; return; }
+  const A = cur(g), T = g.aim && !isOut(g, g.aim) ? g.aim : null;
+  const mini = u => `<span class="mini" style="background:${PCOL[g.col[u]].f}">${esc(initial(nm(g, u)))}</span>`;
+  tb.style.setProperty("--ca", PCOL[g.col[A]].f); tb.style.setProperty("--cb", PCOL[g.col[A]].d || PCOL[g.col[A]].f);
+  let cls = "turnbar on", h;
+  if (A === uid) { cls += " mine"; h = `⚔️ SUA VEZ <span class="arr">➜</span> ${T ? `${mini(T)} atirando em <b>${esc(nm(g, T))}</b>` : "escolha o alvo"}`; }
+  else if (T === uid) { cls += " alert"; h = `⚠️ ${mini(A)} <b>${esc(nm(g, A))}</b> está atacando <b>VOCÊ!</b>`; }
+  else if (T) h = `${mini(A)} <b>${esc(nm(g, A))}</b> ⚔️ <span class="arr">➜</span> ${mini(T)} <b>${esc(nm(g, T))}</b>`;
+  else h = `${mini(A)} Vez de <b>${esc(nm(g, A))}</b>: escolhendo o alvo…`;
+  tb.className = cls; tb.innerHTML = h;
+}
+const initial = n => { const s = (n || "").replace(/🦆|😭/g, "").trim(); return (s[0] || "?").toUpperCase(); };
+// barra de jogadores (substitui as abas)
+function renderPBar(g) {
+  const battle = g.phase === "battle", A = battle && !g.ended ? cur(g) : null, mine = A === uid, pend = mine ? pending(g, uid) : [];
+  const med = ["🥇", "🥈", "🥉", "4º"];
+  $("pbar").innerHTML = g.order.map(u => {
+    const on = R.players[u] && R.players[u].online, out = isOut(g, u);
+    let st, cls = "pcard", bdg = "";
+    if (g.phase === "setup") st = g.ready[u] ? "pronto ✔" : "posicionando…";
+    else if (g.phase === "roll") st = g.rolls[u] ? `🎲 ${g.rolls[u].v}` : "dado…";
+    else st = out ? "☠️ afundado" : `🚢 ${shipsLeft(g, u)} navio${shipsLeft(g, u) === 1 ? "" : "s"}`;
+    if (g.ended && g.mode !== "duo") st = (med[g.places.indexOf(u)] || "") + " " + st;
+    if (u === A) { cls += " atk"; bdg = "⚔️ VEZ"; }
+    else if (battle && !g.ended && g.aim === u && !out) { cls += " tgt"; bdg = "🎯 ALVO"; }
+    else if (mine && pend.includes(u)) bdg = `<span style="background:#64748b;padding:1px 6px;border-radius:999px">🎯</span>`;
+    else if (mine && g.shotTurn[u]) bdg = `<span style="background:#22c55e;padding:1px 6px;border-radius:999px">✔</span>`;
+    if (out) cls += " dead";
+    if (battle && u === view) cls += " view";
+    return `<button class="${cls}" data-u="${u}" style="--c:${PCOL[g.col[u]].f}">${bdg ? `<span class="bdg">${bdg}</span>` : ""}<div class="pav">${esc(initial(nm(g, u)))}</div>
+      <div class="pnm">${u === uid ? "Você" : esc(nm(g, u))}</div><div class="pst">${g.mode === "duo" ? `${g.team[u] ? "B" : "A"} · ` : ""}${st}${on ? "" : " 📴"}</div></button>`;
+  }).join("");
+  if (battle) document.querySelectorAll(".pcard").forEach(b => b.onclick = () => { view = b.dataset.u; viewLock = Date.now() + 5000; renderGame(); });
 }
 let shotBusy = false;
 function animateShot(s, g) {
@@ -874,13 +1076,10 @@ function renderGame() {
   $("gTitle").innerHTML = `Sala ${roomCode} <small>· ${g.size}x${g.size}${g.mode === "duo" ? " · Duplas" : ""}</small>`;
   $("bChat").style.display = g.mode === "duo" && g.team[uid] !== undefined ? "" : "none";
   const med = ["🥇", "🥈", "🥉", "4º"];
-  $("gChips").innerHTML = g.order.map(u => {
-    const on = R.players[u] && R.players[u].online, pl = g.ended && g.mode !== "duo" ? med[g.places.indexOf(u)] + " " : "";
-    return `<div class="chip ${g.phase === "battle" && u === cur(g) && !g.ended ? "cur" : ""} ${isOut(g, u) ? "out" : ""}"><i class="dot" style="background:${PCOL[g.col[u]].f}"></i>${pl}${g.mode === "duo" ? `<b>${g.team[u] ? "B" : "A"}</b> ` : ""}${esc(nm(g, u))}${u === uid ? " (você)" : ""}${g.phase === "battle" || g.ended ? ` · 🚢${shipsLeft(g, u)}` : (g.phase === "setup" ? (g.ready[u] ? " ✔" : " …") : "")}${on ? "" : " 📴"}</div>`;
-  }).join("");
   if (g.phase === "setup") renderSetup(g);
   else if (g.phase === "roll") renderRoll(g);
   else renderBattle(g);
+  renderPBar(g); renderTurnBar(g);
   // dado da ordem (o meu, animado)
   if (g.rolls[uid] && !myRollShown && !firstSnap) { myRollShown = true; throwDie(g.rolls[uid].v); }
   if (g.rolls[uid] && firstSnap) myRollShown = true;
